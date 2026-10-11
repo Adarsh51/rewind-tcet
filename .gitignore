@@ -1,0 +1,9 @@
+# scratch / build artifacts
+work/
+*.pyc
+__pycache__/
+.vercel/
+
+# OS files
+.DS_Store
+Thumbs.db

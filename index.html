@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rewind · TCET First-Year PYQs</title>
+  <meta name="description" content="Rewind — download first-year previous year question papers (PYQs) for Thakur College of Engineering & Technology." />
+  <link rel="icon" type="image/png" href="assets/rewind-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+/* ===== TCET PYQs — styles ===== */
+:root {
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #f0f2f8;
+  --text: #141a2e;
+  --muted: #5b647d;
+  --line: #e4e7f0;
+  --accent: #4f46e5;
+  --accent-2: #7c3aed;
+  --accent-soft: #eceafe;
+  --ring: rgba(79, 70, 229, 0.28);
+  --shadow: 0 1px 2px rgba(20, 26, 46, .06), 0 8px 24px rgba(20, 26, 46, .06);
+  --shadow-lift: 0 10px 30px rgba(20, 26, 46, .12);
+  --radius: 18px;
+  --tag-ese: #2563eb; --tag-ese-bg: #e0ebff;
+  --tag-mse: #d97706; --tag-mse-bg: #fdecd2;
+  --tag-ise: #15803d; --tag-ise-bg: #d9f3e2;
+  --tag-pyq: #475569; --tag-pyq-bg: #e8ecf3;
+}
+[data-theme="dark"] {
+  --bg: #0c0f1a;
+  --surface: #151a2b;
+  --surface-2: #1c2238;
+  --text: #eef1fb;
+  --muted: #9aa3bd;
+  --line: #273049;
+  --accent: #8b84ff;
+  --accent-2: #b78bff;
+  --accent-soft: #211d44;
+  --ring: rgba(139, 132, 255, 0.4);
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  --shadow-lift: 0 14px 40px rgba(0,0,0,.5);
+  --tag-ese: #93b4ff; --tag-ese-bg: #1b2b4d;
+  --tag-mse: #f0b45e; --tag-mse-bg: #3a2a12;
+  --tag-ise: #74d79a; --tag-ise-bg: #11321f;
+  --tag-pyq: #aab4cc; --tag-pyq-bg: #222a40;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, .brand-mark { font-family: "Space Grotesk", "Inter", sans-serif; }
+a { color: inherit; text-decoration: none; }
+main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
+.muted { color: var(--muted); }
+/* ---- nav ---- */
+.nav {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: 1040px; margin: 0 auto; padding: 16px 20px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(10px);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-logo { height: 25px; width: auto; display: block; }
+.brand-text { display: flex; align-items: baseline; gap: 7px; }
+.brand-mark {
+  font-weight: 700; font-size: 1.3rem; letter-spacing: .5px;
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.brand-sub {
+  font-weight: 600; font-size: .78rem; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted);
+}
+.theme-toggle {
+  width: 40px; height: 40px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface);
+  font-size: 1.05rem; display: grid; place-items: center;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.theme-toggle:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+/* ---- hero ---- */
+.hero { padding: 46px 0 30px; }
+.hero-logo { height: 60px; width: auto; display: block; margin: 0 0 24px; filter: drop-shadow(0 6px 16px rgba(0,0,0,.28)); }
+.eyebrow {
+  display: inline-block; margin: 0 0 14px; padding: 5px 12px; border-radius: 999px;
+  font-size: .76rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--accent); background: var(--accent-soft);
+}
+.hero-title { margin: 0; font-size: clamp(2.3rem, 6vw, 3.6rem); line-height: 1.04; letter-spacing: -1px; }
+.hero-title .accent {
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero-tag { margin: 18px 0 0; font-size: 1.08rem; color: var(--muted); max-width: 44ch; }
+/* ---- group cards (home) ---- */
+.groups { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; margin-top: 14px; }
+.group-card {
+  display: flex; flex-direction: column; padding: 26px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  position: relative; overflow: hidden;
+}
+.group-card::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 4px;
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+}
+.group-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lift); border-color: var(--ring); }
+.group-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.group-top h2 { margin: 0; font-size: 1.5rem; }
+.pill {
+  font-size: .74rem; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+  color: var(--accent); background: var(--accent-soft); white-space: nowrap;
+}
+.group-subs { list-style: none; margin: 18px 0 20px; padding: 0; flex: 1; }
+.group-subs li {
+  padding: 7px 0 7px 22px; position: relative; color: var(--muted); font-size: .95rem;
+  border-bottom: 1px dashed var(--line);
+}
+.group-subs li:last-child { border-bottom: 0; }
+.group-subs li::before {
+  content: ""; position: absolute; left: 2px; top: 50%; transform: translateY(-50%);
+  width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+}
+.group-foot { display: flex; align-items: center; justify-content: space-between; font-size: .9rem; color: var(--muted); }
+.group-foot .go { font-weight: 600; color: var(--accent); }
+/* ---- how it works ---- */
+.howto { margin-top: 56px; }
+.howto h2 { font-size: 1.2rem; margin: 0 0 16px; }
+.steps { margin: 0; padding-left: 20px; color: var(--muted); display: grid; gap: 8px; max-width: 60ch; }
+.steps strong { color: var(--text); }
+/* ---- breadcrumbs + page head ---- */
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 22px 0 6px; font-size: .9rem; color: var(--muted); }
+.crumbs a { color: var(--accent); font-weight: 500; cursor: pointer; }
+.crumbs a:hover { text-decoration: underline; }
+.crumbs span { opacity: .5; }
+.crumbs strong { color: var(--text); font-weight: 600; }
+.page-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  flex-wrap: wrap; margin: 10px 0 26px;
+}
+.page-head h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 2.5rem); letter-spacing: -.5px; }
+.search-wrap { flex: 1; min-width: 220px; max-width: 340px; }
+.search {
+  width: 100%; padding: 12px 16px; border-radius: 12px; font: inherit;
+  color: var(--text); background: var(--surface); border: 1px solid var(--line);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.search::placeholder { color: var(--muted); }
+.search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--ring); }
+/* ---- subject grid ---- */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+.card {
+  display: flex; flex-direction: column; gap: 10px; padding: 22px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lift); border-color: var(--ring); }
+.card-ic {
+  width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center;
+  font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 1.05rem;
+  color: var(--accent); background: var(--accent-soft);
+}
+.card h3 { margin: 4px 0 0; font-size: 1.1rem; line-height: 1.25; }
+.card-meta { margin: 0; font-size: .88rem; color: var(--muted); }
+/* ---- papers ---- */
+.sem-block { margin-bottom: 34px; }
+.sem-head {
+  font-size: 1rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
+  margin: 0 0 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line);
+}
+.papers { display: grid; gap: 12px; }
+.paper {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 16px 18px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; box-shadow: var(--shadow); transition: border-color .15s ease, transform .15s ease;
+}
+.paper:hover { border-color: var(--ring); transform: translateY(-2px); }
+.paper-info { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.paper-text { min-width: 0; }
+.paper-text h3 { margin: 0; font-size: 1rem; font-family: "Inter", sans-serif; font-weight: 600; }
+.paper-year { margin: 2px 0 0; font-size: .85rem; color: var(--muted); }
+.tag {
+  flex: none; font-size: .72rem; font-weight: 700; letter-spacing: .5px;
+  padding: 6px 10px; border-radius: 9px; text-transform: uppercase;
+}
+.tag-ese { color: var(--tag-ese); background: var(--tag-ese-bg); }
+.tag-mse { color: var(--tag-mse); background: var(--tag-mse-bg); }
+.tag-ise { color: var(--tag-ise); background: var(--tag-ise-bg); }
+.tag-pyq { color: var(--tag-pyq); background: var(--tag-pyq-bg); }
+.dl {
+  flex: none; display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 16px; border-radius: 11px; font-weight: 600; font-size: .9rem;
+  color: #fff; background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+}
+.dl:hover { transform: translateY(-1px); box-shadow: 0 8px 20px var(--ring); }
+.dl-ic { font-size: 1rem; }
+.paper.is-soon { opacity: .7; }
+.soon {
+  flex: none; font-size: .82rem; font-weight: 600; color: var(--muted); white-space: nowrap;
+  padding: 9px 16px; border-radius: 11px; border: 1px dashed var(--line); background: var(--surface-2);
+}
+/* ---- empty + footer ---- */
+.empty {
+  padding: 44px 24px; text-align: center; color: var(--muted);
+  background: var(--surface-2); border: 1px dashed var(--line); border-radius: var(--radius);
+}
+.empty p { margin: 6px 0; }
+.empty a { color: var(--accent); font-weight: 600; cursor: pointer; }
+.site-foot {
+  max-width: 1040px; margin: 0 auto; padding: 30px 20px 50px;
+  border-top: 1px solid var(--line); color: var(--muted); font-size: .9rem; text-align: center;
+}
+.site-foot p { margin: 4px 0; }
+.site-foot .credit { margin-top: 16px; font-size: .74rem; letter-spacing: .4px; color: var(--muted); opacity: .8; }
+.site-foot .credit span, .site-foot .credit a { color: var(--text); }
+.site-foot .credit a { border-bottom: 1px solid var(--line); transition: color .15s ease, border-color .15s ease; }
+.site-foot .credit a:hover { color: var(--accent); border-color: var(--accent); }
+/* ---- responsive ---- */
+@media (max-width: 680px) {
+  .groups { grid-template-columns: 1fr; }
+  .hero { padding: 30px 0 18px; }
+  .hero-logo { height: 46px; }
+  .page-head { flex-direction: column; align-items: stretch; }
+  .search-wrap { max-width: none; }
+  .paper { flex-direction: column; align-items: stretch; gap: 14px; }
+  .paper-info { justify-content: flex-start; }
+  .dl { justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; scroll-behavior: auto !important; }
+}
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="#">
+      <img class="brand-logo" src="assets/rewind-logo.png" alt="Rewind" />
+      <span class="brand-sub">TCET PYQs</span>
+    </a>
+    <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle theme">
+      <span class="theme-icon">🌙</span>
+    </button>
+  </header>
+
+  <main id="view"></main>
+
+  <footer class="site-foot">
+    <p><strong>Rewind</strong> · First-Year PYQs for Thakur College of Engineering &amp; Technology</p>
+    <p class="muted">Papers belong to their respective examiners · shared for study use only.</p>
+    <p class="credit">Designed &amp; built by <a href="https://www.linkedin.com/in/adarsh-dubey-048689213" target="_blank" rel="noopener">Adarsh Dubey</a></p>
+  </footer>
+
+  <script>
+/* ============================================================
+   TCET PYQs — all content lives in SITE below.
+   TO ADD A PAPER:
+     1. Put the PDF in  pyqs/group1/<subject>/  or  pyqs/group2/<subject>/
+     2. Add an entry to that subject's "papers" list:
+          { title:"ESE 2024-25", year:"2024-25", exam:"ESE",
+            sem:"odd", file:"pyqs/group1/phy/phy-ese-2024.pdf" }
+        exam: "ISE" | "MSE" | "ESE"   sem: "odd" | "even"
+   (The assets/sample.pdf entries below are placeholders — swap them in.)
+   ============================================================ */
+var SITE = {
+  tagline: "Pick your group to see subject-wise papers you can download.",
+  groups: [
+    { id: "1", name: "Group I", subjects: [
+      { id: "phy", name: "Engineering Physics", papers: [
+        { title: "ISE I", year: "2024-25", exam: "ISE", sem: "odd", file: "pyqs/group1/phy/phy-ise1.pdf" },
+        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true } ] },
+      { id: "maths", name: "Engineering Mathematics", papers: [
+        { title: "ISE I", year: "2024-25", exam: "ISE", sem: "odd", file: "pyqs/group1/maths/maths-ise1.pdf" },
+        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true } ] },
+      { id: "bee", name: "Basic Electrical Engineering", papers: [
+        { title: "ISE I", year: "2024-25", exam: "ISE", sem: "odd", file: "pyqs/group1/bee/bee-ise1.pdf" },
+        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true } ] },
+      { id: "egd", name: "Engineering Graphics & Design", papers: [
+        { title: "ISE I", year: "2024-25", exam: "ISE", sem: "odd", file: "pyqs/group1/egd/egd-ise1.pdf" },
+        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true } ] },
+      { id: "eng", name: "English for General & Professional Communication", papers: [
+        { title: "ISE I", year: "2024-25", exam: "ISE", sem: "odd", file: "pyqs/group1/eng/eng-ise1.pdf" },
+        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true } ] }
+    ] },
+    { id: "2", name: "Group II", subjects: [
+      { id: "chem", name: "Engineering Chemistry", papers: [
+        { title: "ISE I", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/chem/chem-ise1.pdf" },
+        { title: "ISE II", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/chem/chem-ise2.pdf" },
+        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true } ] },
+      { id: "pps", name: "Programming for Problem Solving", papers: [
+        { title: "ISE I", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/pps/pps-ise1.pdf" },
+        { title: "ISE II", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/pps/pps-ise2.pdf" },
+        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true } ] },
+      { id: "maths", name: "Engineering Mathematics", papers: [
+        { title: "ISE I", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/maths/maths-ise1.pdf" },
+        { title: "ISE II", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/maths/maths-ise2.pdf" },
+        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true } ] },
+      { id: "em", name: "Engineering Mechanics", papers: [
+        { title: "ISE I", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/em/em-ise1.pdf" },
+        { title: "ISE II", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/em/em-ise2.pdf" },
+        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true } ] },
+      { id: "iks", name: "Introduction to Indian Knowledge System", papers: [
+        { title: "ISE I", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/iks/iks-ise1.pdf" },
+        { title: "ISE II", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/iks/iks-ise2.pdf" },
+        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true } ] }
+    ] }
+  ]
+};
+/* ---- theme ---- */
+(function () {
+  var saved = localStorage.getItem('tcet-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  var btn = document.getElementById('themeToggle');
+  function sync() {
+    var t = document.documentElement.getAttribute('data-theme');
+    btn.querySelector('.theme-icon').textContent = t === 'dark' ? '☀️' : '🌙';
+  }
+  sync();
+  btn.addEventListener('click', function () {
+    var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('tcet-theme', next);
+    sync();
+  });
+})();
+
+/* ---- helpers ---- */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function examClass(e) { return 'tag tag-' + String(e || 'pyq').toLowerCase(); }
+function initials(n) { return n.split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase(); }
+function paperCount(s) { return (s.papers || []).length; }
+function groupById(id) { return SITE.groups.find(function (g) { return g.id === id; }); }
+function subjectById(g, id) { return g.subjects.find(function (s) { return s.id === id; }); }
+
+var view = document.getElementById('view');
+
+/* ---- views ---- */
+function renderHome() {
+  document.title = 'Rewind · TCET First-Year PYQs';
+  var cards = SITE.groups.map(function (g) {
+    var subs = g.subjects.map(function (s) { return '<li>' + esc(s.name) + '</li>'; }).join('');
+    var total = g.subjects.reduce(function (n, s) { return n + paperCount(s); }, 0);
+    return '<a class="group-card" href="#g=' + g.id + '">' +
+      '<div class="group-top"><h2>' + esc(g.name) + '</h2><span class="pill">' + g.subjects.length + ' subjects</span></div>' +
+      '<ul class="group-subs">' + subs + '</ul>' +
+      '<div class="group-foot"><span>' + total + ' papers</span><span class="go">Continue &rarr;</span></div></a>';
+  }).join('');
+  view.innerHTML =
+    '<section class="hero">' +
+    '<img class="hero-logo" src="assets/rewind-logo.png" alt="Rewind"/>' +
+    '<p class="eyebrow">TCET · First Year Engineering</p>' +
+    '<h1 class="hero-title">Previous Year<br/><span class="accent">Question Papers</span></h1>' +
+    '<p class="hero-tag">' + esc(SITE.tagline) + '</p></section>' +
+    '<section class="groups">' + cards + '</section>' +
+    '<section class="howto"><h2>How it works</h2><ol class="steps">' +
+    '<li><strong>Choose your group</strong> — Group I or Group II.</li>' +
+    '<li><strong>Open a subject</strong> — papers are sorted by odd &amp; even sem.</li>' +
+    '<li><strong>Download</strong> — tap any paper to grab the PDF.</li></ol></section>';
+}
+
+function pageHead(title, placeholder) {
+  return '<section class="page-head"><h1>' + esc(title) + '</h1>' +
+    '<div class="search-wrap"><input id="search" class="search" type="search" placeholder="' + placeholder + '"/></div></section>' +
+    '<section id="content"></section>';
+}
+
+function renderSubjects(g) {
+  document.title = 'Rewind · ' + g.name;
+  view.innerHTML = '<nav class="crumbs"><a href="#">Home</a><span>/</span><strong>' + esc(g.name) + '</strong></nav>' +
+    pageHead(g.name, 'Search subjects…');
+  var content = document.getElementById('content');
+  function draw(q) {
+    var n = (q || '').trim().toLowerCase();
+    var subs = g.subjects.filter(function (s) {
+      return !n || s.name.toLowerCase().indexOf(n) > -1;
+    });
+    if (!subs.length) { content.innerHTML = '<p class="empty">No subjects match &ldquo;' + esc(q) + '&rdquo;.</p>'; return; }
+    content.innerHTML = '<div class="grid">' + subs.map(function (s) {
+      var c = paperCount(s);
+      return '<a class="card" href="#g=' + g.id + '&s=' + s.id + '">' +
+        '<div class="card-ic">' + esc(initials(s.name)) + '</div><h3>' + esc(s.name) + '</h3>' +
+        '<p class="card-meta">' + c + ' paper' + (c === 1 ? '' : 's') + '</p></a>';
+    }).join('') + '</div>';
+  }
+  draw('');
+  document.getElementById('search').addEventListener('input', function (e) { draw(e.target.value); });
+}
+
+function paperCard(p) {
+  var action = p.soon
+    ? '<span class="soon">Coming soon</span>'
+    : '<a class="dl" href="' + esc(p.file) + '" download target="_blank" rel="noopener">Download <span class="dl-ic" aria-hidden="true">&darr;</span></a>';
+  return '<div class="paper' + (p.soon ? ' is-soon' : '') + '"><div class="paper-info">' +
+    '<span class="' + examClass(p.exam) + '">' + esc(p.exam || 'PYQ') + '</span>' +
+    '<div class="paper-text"><h3>' + esc(p.title || 'Question Paper') + '</h3>' +
+    (p.year ? '<p class="paper-year">' + esc(p.year) + '</p>' : '') + '</div></div>' +
+    action + '</div>';
+}
+
+function renderSubject(g, s) {
+  document.title = 'Rewind · ' + g.name + ' · ' + s.name;
+  view.innerHTML = '<nav class="crumbs"><a href="#">Home</a><span>/</span>' +
+    '<a href="#g=' + g.id + '">' + esc(g.name) + '</a><span>/</span><strong>' + esc(s.name) + '</strong></nav>' +
+    pageHead(s.name, 'Search papers…');
+  var content = document.getElementById('content');
+  var papers = s.papers || [];
+  function draw(q) {
+    if (!papers.length) {
+      content.innerHTML = '<div class="empty"><p>No papers uploaded for this subject yet.</p><p class="muted">Check back soon.</p></div>';
+      return;
+    }
+    var n = (q || '').trim().toLowerCase();
+    var list = papers.filter(function (p) {
+      return !n || (p.title || '').toLowerCase().indexOf(n) > -1 || String(p.year || '').indexOf(n) > -1 || (p.exam || '').toLowerCase().indexOf(n) > -1;
+    });
+    if (!list.length) { content.innerHTML = '<p class="empty">No papers match &ldquo;' + esc(q) + '&rdquo;.</p>'; return; }
+    function block(label, items) {
+      return items.length ? '<div class="sem-block"><h2 class="sem-head">' + label + '</h2><div class="papers">' + items.map(paperCard).join('') + '</div></div>' : '';
+    }
+    var odd = list.filter(function (p) { return (p.sem || '').toLowerCase() === 'odd'; });
+    var even = list.filter(function (p) { return (p.sem || '').toLowerCase() === 'even'; });
+    var other = list.filter(function (p) { return ['odd', 'even'].indexOf((p.sem || '').toLowerCase()) === -1; });
+    content.innerHTML = block('Odd Semester', odd) + block('Even Semester', even) + block('Papers', other);
+  }
+  draw('');
+  document.getElementById('search').addEventListener('input', function (e) { draw(e.target.value); });
+}
+
+/* ---- router ---- */
+function render() {
+  var p = new URLSearchParams(location.hash.replace(/^#/, ''));
+  var g = p.get('g') ? groupById(p.get('g')) : null;
+  if (!g) { renderHome(); window.scrollTo(0, 0); return; }
+  var s = p.get('s') ? subjectById(g, p.get('s')) : null;
+  if (s) renderSubject(g, s); else renderSubjects(g);
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', render);
+render();
+  </script>
+</body>
+</html>
