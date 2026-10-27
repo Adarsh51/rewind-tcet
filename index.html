@@ -284,8 +284,16 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
 /* ---- like button ---- */
 .like-wrap {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   margin: 18px 0 0;
+  gap: 8px;
+}
+.like-nudge {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 500;
 }
 .like-btn {
   display: inline-flex;
@@ -494,7 +502,7 @@ function renderHome() {
     '<p class="eyebrow">TCET · First Year Engineering</p>' +
     '<h1 class="hero-title">Previous Year<br/><span class="accent">Question Papers</span></h1>' +
     '<p class="hero-tag">' + esc(SITE.tagline) + '</p>' +
-    '<div class="like-wrap"><button class="like-btn' + (localStorage.getItem('rewind-liked') ? ' liked' : '') + '" id="likeBtn" aria-label="Like this site">' +
+    '<div class="like-wrap"><p class="like-nudge">Found this helpful? Show some love 👇</p><button class="like-btn' + (localStorage.getItem('rewind-liked') ? ' liked' : '') + '" id="likeBtn" aria-label="Like this site">' +
     '<span class="like-heart">' + (localStorage.getItem('rewind-liked') ? '❤️' : '🤍') + '</span>' +
     '<span class="like-count" id="likeCount">—</span></button></div></section>' +
     '<section class="groups">' + cards + '</section>' +
