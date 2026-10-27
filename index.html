@@ -281,6 +281,61 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
   font-size: 0.88rem;
   color: var(--accent);
 }
+/* ---- like button ---- */
+.like-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 18px 0 0;
+}
+.like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  font-family: "Inter", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .2s ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.like-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+  border-color: #f43f5e;
+}
+.like-btn.liked {
+  color: #f43f5e;
+  border-color: #f43f5e;
+  background: rgba(244, 63, 94, 0.08);
+}
+.like-heart {
+  font-size: 1.1rem;
+  display: inline-block;
+  transition: transform .25s ease;
+}
+.like-btn.liked .like-heart {
+  animation: heart-pop .4s ease;
+}
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.4); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.like-count {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  min-width: 20px;
+  text-align: center;
+}
 /* ---- responsive ---- */
 @media (max-width: 680px) {
   .groups { grid-template-columns: 1fr; }
@@ -438,7 +493,10 @@ function renderHome() {
     '<img class="hero-logo" src="assets/rewind-logo.png" alt="Rewind"/>' +
     '<p class="eyebrow">TCET · First Year Engineering</p>' +
     '<h1 class="hero-title">Previous Year<br/><span class="accent">Question Papers</span></h1>' +
-    '<p class="hero-tag">' + esc(SITE.tagline) + '</p></section>' +
+    '<p class="hero-tag">' + esc(SITE.tagline) + '</p>' +
+    '<div class="like-wrap"><button class="like-btn' + (localStorage.getItem('rewind-liked') ? ' liked' : '') + '" id="likeBtn" aria-label="Like this site">' +
+    '<span class="like-heart">' + (localStorage.getItem('rewind-liked') ? '❤️' : '🤍') + '</span>' +
+    '<span class="like-count" id="likeCount">—</span></button></div></section>' +
     '<section class="groups">' + cards + '</section>' +
     '<section class="howto"><h2>How it works</h2><ol class="steps">' +
     '<li><strong>Choose your group</strong> — Group I or Group II.</li>' +
@@ -518,13 +576,50 @@ function renderSubject(g, s) {
 function render() {
   var p = new URLSearchParams(location.hash.replace(/^#/, ''));
   var g = p.get('g') ? groupById(p.get('g')) : null;
-  if (!g) { renderHome(); window.scrollTo(0, 0); return; }
+  if (!g) { renderHome(); initLikeBtn(); window.scrollTo(0, 0); return; }
   var s = p.get('s') ? subjectById(g, p.get('s')) : null;
   if (s) renderSubject(g, s); else renderSubjects(g);
   window.scrollTo(0, 0);
 }
 window.addEventListener('hashchange', render);
 render();
+
+/* ---- like button ---- */
+var LIKE_SEED = 847;
+
+function updateLikeCount(res) {
+  if (res && typeof res.value !== 'undefined') {
+    var el = document.getElementById('likeCount');
+    if (el) el.textContent = Number(LIKE_SEED + res.value).toLocaleString();
+  }
+}
+
+function loadLikeCount(increment) {
+  var endpoint = increment ? '/hit/' : '/get/';
+  var s = document.createElement('script');
+  s.src = 'https://abacus.jasoncameron.dev' + endpoint + 'adarsh51-rewind-tcet/likes?callback=updateLikeCount';
+  s.async = true;
+  document.body.appendChild(s);
+}
+
+function initLikeBtn() {
+  var btn = document.getElementById('likeBtn');
+  if (!btn) return;
+
+  // Load current count (no increment)
+  loadLikeCount(false);
+
+  btn.addEventListener('click', function () {
+    if (localStorage.getItem('rewind-liked')) return;
+
+    localStorage.setItem('rewind-liked', '1');
+    btn.classList.add('liked');
+    btn.querySelector('.like-heart').textContent = '❤️';
+
+    // Increment and refresh count
+    loadLikeCount(true);
+  });
+}
   </script>
 </body>
 </html>
