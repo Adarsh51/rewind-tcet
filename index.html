@@ -327,8 +327,9 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
   <script>
     function updateVisitorCount(res) {
       if (res && typeof res.value !== 'undefined') {
+        var PAST_VISITS = 1573;
         var el = document.getElementById('visitorCount');
-        if (el) el.textContent = Number(res.value).toLocaleString();
+        if (el) el.textContent = Number(PAST_VISITS + res.value).toLocaleString();
       }
     }
   </script>
