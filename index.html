@@ -243,7 +243,7 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 10px 4px 8px;
+  padding: 5px 14px 5px 10px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -268,10 +268,18 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
   70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
   100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
-.visitor-badge {
-  display: block;
-  height: 20px;
-  border-radius: 4px;
+.visitor-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.visitor-count {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--accent);
 }
 /* ---- responsive ---- */
 @media (max-width: 680px) {
@@ -305,20 +313,26 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
 
   <footer class="site-foot">
     <div class="visitor-counter-wrap">
-      <div class="visitor-pill" title="Total visitors">
+      <div class="visitor-pill" title="Total visits">
         <span class="visitor-dot" aria-hidden="true"></span>
-        <img 
-          class="visitor-badge" 
-          src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FAdarsh51%2Frewind-tcet&count_bg=%234f46e5&title_bg=%23151a2b&icon=&icon_color=%23eef1fb&title=Visitors&edge_flat=false" 
-          alt="Visitor Count" 
-          loading="lazy"
-        />
+        <span class="visitor-label">Total Visits</span>
+        <span id="visitorCount" class="visitor-count">—</span>
       </div>
     </div>
     <p><strong>Rewind</strong> · First-Year PYQs for Thakur College of Engineering &amp; Technology</p>
     <p class="muted">Papers belong to their respective examiners · shared for study use only.</p>
     <p class="credit">Designed &amp; built by <a href="https://www.linkedin.com/in/adarsh-dubey-048689213" target="_blank" rel="noopener">Adarsh Dubey</a></p>
   </footer>
+
+  <script>
+    function updateVisitorCount(res) {
+      if (res && typeof res.value !== 'undefined') {
+        var el = document.getElementById('visitorCount');
+        if (el) el.textContent = Number(res.value).toLocaleString();
+      }
+    }
+  </script>
+  <script async src="https://abacus.jasoncameron.dev/hit/adarsh51-rewind-tcet/visits?callback=updateVisitorCount"></script>
 
   <script>
 /* ============================================================
