@@ -1220,21 +1220,28 @@ function renderSubject(g, s, initialYear) {
 }
 
 /* ---- WhatsApp sharing helpers ---- */
+function getSiteBaseUrl() {
+  if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.indexOf('http') === 0) {
+    return window.location.origin;
+  }
+  return 'https://rewindxtcet.vercel.app';
+}
+
 function shareSiteWhatsApp() {
-  var url = 'https://rewind-tcet.vercel.app';
+  var url = getSiteBaseUrl();
   var msg = '📚 *Rewind — TCET First Year PYQs*\nDownload past question papers (ISE 1, ISE 2, ESE) for Group I & Group II subjects, or upload yours:\n' + url;
   window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
 }
 
 function shareSubjectWhatsApp(subName, gId, sId) {
-  var url = 'https://rewind-tcet.vercel.app/#g=' + gId + '&s=' + sId;
+  var url = getSiteBaseUrl() + '/#g=' + gId + '&s=' + sId;
   var msg = '📄 *' + subName + ' PYQs (TCET First Year)*\nDownload past ISE 1, ISE 2 and ESE papers on Rewind:\n' + url;
   window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
 }
 
 function sharePaperWhatsApp(title, year, exam, fileUrl) {
   var curHash = location.hash || '';
-  var url = 'https://rewind-tcet.vercel.app/' + curHash;
+  var url = getSiteBaseUrl() + '/' + curHash;
   var msg = '📝 *TCET ' + exam + ' ' + title + ' (' + year + ')* question paper is on Rewind:\n' + url;
   window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
 }
