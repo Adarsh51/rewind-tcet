@@ -3,6 +3,9 @@ work/
 *.pyc
 __pycache__/
 .vercel/
+node_modules/
+.env
+.env.local
 
 # OS files
 .DS_Store

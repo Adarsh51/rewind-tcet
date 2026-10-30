@@ -1,4 +1,16 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "functions": {
+    "api/upload.js": {
+      "maxDuration": 30,
+      "memory": 1024
+    },
+    "api/admin.js": {
+      "maxDuration": 15
+    },
+    "api/papers.js": {
+      "maxDuration": 10
+    }
+  }
 }

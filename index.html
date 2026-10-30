@@ -344,6 +344,137 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
   min-width: 20px;
   text-align: center;
 }
+/* ---- upload / contribute ---- */
+.contribute-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 22px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent);
+  font-family: "Inter", sans-serif;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, transform .15s ease;
+}
+.contribute-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.contribute-btn .btn-icon { font-size: 1.05rem; }
+/* ---- modal ---- */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s ease;
+}
+.modal-overlay.active { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lift);
+  width: 100%; max-width: 520px;
+  max-height: 90vh; overflow-y: auto;
+  padding: 28px;
+  transform: translateY(20px) scale(0.97);
+  transition: transform .25s ease;
+}
+.modal-overlay.active .modal { transform: translateY(0) scale(1); }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.modal-header h2 { margin: 0; font-size: 1.3rem; }
+.modal-close {
+  width: 34px; height: 34px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface-2);
+  cursor: pointer; font-size: 1.1rem; display: grid; place-items: center;
+  transition: background .15s ease;
+}
+.modal-close:hover { background: var(--line); }
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block; margin-bottom: 5px;
+  font-size: .82rem; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .4px;
+}
+.form-group select,
+.form-group input[type="text"] {
+  width: 100%; padding: 10px 14px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface-2);
+  color: var(--text); font: inherit; font-size: .92rem;
+  transition: border-color .15s ease;
+}
+.form-group select:focus,
+.form-group input[type="text"]:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.file-drop {
+  border: 2px dashed var(--line); border-radius: 14px;
+  padding: 28px 20px; text-align: center;
+  cursor: pointer; transition: border-color .15s ease, background .15s ease;
+  position: relative;
+}
+.file-drop:hover, .file-drop.dragover {
+  border-color: var(--accent); background: var(--accent-soft);
+}
+.file-drop-icon { font-size: 2rem; margin-bottom: 6px; }
+.file-drop-text { font-size: .88rem; color: var(--muted); }
+.file-drop-text strong { color: var(--accent); }
+.file-drop input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+}
+.file-name {
+  margin-top: 8px; font-size: .82rem; color: var(--accent); font-weight: 600;
+  word-break: break-all;
+}
+.submit-btn {
+  width: 100%; padding: 12px; border: none; border-radius: 12px;
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  color: #fff; font-family: "Space Grotesk", sans-serif;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+  margin-top: 8px;
+}
+.submit-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
+.submit-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.upload-status {
+  margin-top: 14px; padding: 12px 16px; border-radius: 10px;
+  font-size: .86rem; font-weight: 500; display: none;
+}
+.upload-status.info { display: block; background: var(--accent-soft); color: var(--accent); }
+.upload-status.success { display: block; background: #d9f3e2; color: #15803d; }
+.upload-status.error { display: block; background: #fde2e2; color: #dc2626; }
+.upload-status.warning { display: block; background: #fdecd2; color: #d97706; }
+[data-theme="dark"] .upload-status.success { background: #11321f; color: #74d79a; }
+[data-theme="dark"] .upload-status.error { background: #3b1111; color: #fca5a5; }
+[data-theme="dark"] .upload-status.warning { background: #3a2a12; color: #f0b45e; }
+.paper-contributor {
+  margin: 2px 0 0;
+  font-size: .74rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+.soon {
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.soon:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
 /* ---- responsive ---- */
 @media (max-width: 680px) {
   .groups { grid-template-columns: 1fr; }
@@ -354,6 +485,9 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
   .paper { flex-direction: column; align-items: stretch; gap: 14px; }
   .paper-info { justify-content: flex-start; }
   .dl { justify-content: center; }
+}
+@media (max-width: 480px) {
+  #navUploadBtn { padding: 7px 12px; font-size: .78rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; scroll-behavior: auto !important; }
@@ -367,12 +501,89 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
       <img class="brand-logo" src="assets/rewind-logo.png" alt="Rewind" />
       <span class="brand-sub">TCET PYQs</span>
     </a>
-    <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle theme">
-      <span class="theme-icon">🌙</span>
-    </button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button id="navUploadBtn" class="contribute-btn" type="button" style="margin-top:0">
+        <span class="btn-icon">📄</span> Upload Paper
+      </button>
+      <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle theme">
+        <span class="theme-icon">🌙</span>
+      </button>
+    </div>
   </header>
 
   <main id="view"></main>
+
+  <!-- Upload Modal -->
+  <div class="modal-overlay" id="uploadModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>📄 Contribute a Paper</h2>
+        <button class="modal-close" id="closeModal" aria-label="Close">✕</button>
+      </div>
+      <form id="uploadForm" autocomplete="off">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Group</label>
+            <select name="group_id" id="upGroup" required>
+              <option value="">Select group</option>
+              <option value="1">Group I</option>
+              <option value="2">Group II</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Subject</label>
+            <select name="subject_id" id="upSubject" required>
+              <option value="">Select group first</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Exam Type</label>
+            <select name="exam_type" required>
+              <option value="">Select</option>
+              <option value="ISE">ISE</option>
+              <option value="MSE">MSE</option>
+              <option value="ESE">ESE</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Semester</label>
+            <select name="semester" required>
+              <option value="">Select</option>
+              <option value="odd">Odd</option>
+              <option value="even">Even</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Year</label>
+            <input type="text" name="year" placeholder="e.g. 2025-26" required />
+          </div>
+          <div class="form-group">
+            <label>Paper Title</label>
+            <input type="text" name="title" placeholder="e.g. ISE I" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Your Name <span style="font-weight:400;text-transform:none">(optional — leave blank for anonymous)</span></label>
+          <input type="text" name="contributor_name" placeholder="e.g. Rahul S." />
+        </div>
+        <div class="form-group">
+          <label>Question Paper (PDF)</label>
+          <div class="file-drop" id="fileDrop">
+            <input type="file" name="file" accept=".pdf" required id="fileInput" />
+            <div class="file-drop-icon">📎</div>
+            <div class="file-drop-text">Drag & drop your PDF here or <strong>browse</strong></div>
+            <div class="file-name" id="fileName"></div>
+          </div>
+        </div>
+        <button type="submit" class="submit-btn" id="submitBtn">Upload & Submit for Review</button>
+        <div class="upload-status" id="uploadStatus"></div>
+      </form>
+    </div>
+  </div>
 
   <footer class="site-foot">
     <div class="visitor-counter-wrap">
@@ -502,7 +713,10 @@ function renderHome() {
     '<p class="eyebrow">TCET · First Year Engineering</p>' +
     '<h1 class="hero-title">Previous Year<br/><span class="accent">Question Papers</span></h1>' +
     '<p class="hero-tag">' + esc(SITE.tagline) + '</p>' +
-    '<div class="like-wrap"><p class="like-nudge">Found this helpful? Show some love 👇</p><button class="like-btn' + (localStorage.getItem('rewind-liked') ? ' liked' : '') + '" id="likeBtn" aria-label="Like this site">' +
+    '<div class="like-wrap">' +
+    '<button class="contribute-btn" id="heroUploadBtn" type="button" onclick="openUploadModal()"><span class="btn-icon">📤</span> Have a PYQ? Upload it here</button>' +
+    '<p class="like-nudge">Found this helpful? Show some love 👇</p>' +
+    '<button class="like-btn' + (localStorage.getItem('rewind-liked') ? ' liked' : '') + '" id="likeBtn" aria-label="Like this site">' +
     '<span class="like-heart">' + (localStorage.getItem('rewind-liked') ? '❤️' : '🤍') + '</span>' +
     '<span class="like-count" id="likeCount">—</span></button></div></section>' +
     '<section class="groups">' + cards + '</section>' +
@@ -540,14 +754,19 @@ function renderSubjects(g) {
   document.getElementById('search').addEventListener('input', function (e) { draw(e.target.value); });
 }
 
-function paperCard(p) {
+function paperCard(p, gId, sId) {
   var action = p.soon
-    ? '<span class="soon">Coming soon</span>'
+    ? '<button class="soon" type="button" onclick="openUploadModal(\'' + esc(gId || '') + '\', \'' + esc(sId || '') + '\', \'' + esc(p.exam || '') + '\')">Upload this &rarr;</button>'
     : '<a class="dl" href="' + esc(p.file) + '" download target="_blank" rel="noopener">Download <span class="dl-ic" aria-hidden="true">&darr;</span></a>';
+  var credit = (p.contributor && p.contributor !== 'Anonymous')
+    ? '<p class="paper-contributor">Contributed by ' + esc(p.contributor) + '</p>'
+    : '';
   return '<div class="paper' + (p.soon ? ' is-soon' : '') + '"><div class="paper-info">' +
     '<span class="' + examClass(p.exam) + '">' + esc(p.exam || 'PYQ') + '</span>' +
     '<div class="paper-text"><h3>' + esc(p.title || 'Question Paper') + '</h3>' +
-    (p.year ? '<p class="paper-year">' + esc(p.year) + '</p>' : '') + '</div></div>' +
+    (p.year ? '<p class="paper-year">' + esc(p.year) + '</p>' : '') +
+    credit +
+    '</div></div>' +
     action + '</div>';
 }
 
@@ -560,7 +779,9 @@ function renderSubject(g, s) {
   var papers = s.papers || [];
   function draw(q) {
     if (!papers.length) {
-      content.innerHTML = '<div class="empty"><p>No papers uploaded for this subject yet.</p><p class="muted">Check back soon.</p></div>';
+      content.innerHTML = '<div class="empty"><p>No papers uploaded for this subject yet.</p>' +
+        '<p class="muted">Have question papers for ' + esc(s.name) + '?</p>' +
+        '<button class="contribute-btn" type="button" onclick="openUploadModal(\'' + esc(g.id) + '\', \'' + esc(s.id) + '\')">Upload for ' + esc(s.name) + ' 📄</button></div>';
       return;
     }
     var n = (q || '').trim().toLowerCase();
@@ -569,7 +790,7 @@ function renderSubject(g, s) {
     });
     if (!list.length) { content.innerHTML = '<p class="empty">No papers match &ldquo;' + esc(q) + '&rdquo;.</p>'; return; }
     function block(label, items) {
-      return items.length ? '<div class="sem-block"><h2 class="sem-head">' + label + '</h2><div class="papers">' + items.map(paperCard).join('') + '</div></div>' : '';
+      return items.length ? '<div class="sem-block"><h2 class="sem-head">' + label + '</h2><div class="papers">' + items.map(function(item) { return paperCard(item, g.id, s.id); }).join('') + '</div></div>' : '';
     }
     var odd = list.filter(function (p) { return (p.sem || '').toLowerCase() === 'odd'; });
     var even = list.filter(function (p) { return (p.sem || '').toLowerCase() === 'even'; });
@@ -628,6 +849,224 @@ function initLikeBtn() {
     loadLikeCount(true);
   });
 }
+
+/* ---- upload modal logic ---- */
+function populateSubjects(groupId, selectedSubjectId) {
+  var subSelect = document.getElementById('upSubject');
+  if (!subSelect) return;
+  subSelect.innerHTML = '<option value="">Select subject</option>';
+  if (!groupId) return;
+
+  var g = groupById(groupId);
+  if (!g) return;
+
+  g.subjects.forEach(function (s) {
+    var opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name;
+    if (selectedSubjectId && s.id === selectedSubjectId) opt.selected = true;
+    subSelect.appendChild(opt);
+  });
+}
+
+function openUploadModal(groupId, subjectId, examType) {
+  var modal = document.getElementById('uploadModal');
+  var form = document.getElementById('uploadForm');
+  var statusDiv = document.getElementById('uploadStatus');
+  if (!modal || !form) return;
+
+  form.reset();
+  document.getElementById('fileName').textContent = '';
+  if (statusDiv) {
+    statusDiv.style.display = 'none';
+    statusDiv.className = 'upload-status';
+    statusDiv.textContent = '';
+  }
+
+  if (groupId) {
+    document.getElementById('upGroup').value = groupId;
+    populateSubjects(groupId, subjectId);
+  }
+  if (examType && form.elements['exam_type']) {
+    form.elements['exam_type'].value = examType;
+  }
+
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeUploadModal() {
+  var modal = document.getElementById('uploadModal');
+  if (modal) modal.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Wire up global modal events
+(function () {
+  var modal = document.getElementById('uploadModal');
+  var closeBtn = document.getElementById('closeModal');
+  var navBtn = document.getElementById('navUploadBtn');
+  var groupSelect = document.getElementById('upGroup');
+  var fileInput = document.getElementById('fileInput');
+  var fileDrop = document.getElementById('fileDrop');
+  var fileName = document.getElementById('fileName');
+  var form = document.getElementById('uploadForm');
+  var submitBtn = document.getElementById('submitBtn');
+  var statusDiv = document.getElementById('uploadStatus');
+
+  if (navBtn) navBtn.addEventListener('click', function () { openUploadModal(); });
+  if (closeBtn) closeBtn.addEventListener('click', closeUploadModal);
+  if (modal) {
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) closeUploadModal();
+    });
+  }
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeUploadModal();
+  });
+
+  if (groupSelect) {
+    groupSelect.addEventListener('change', function () {
+      populateSubjects(this.value);
+    });
+  }
+
+  function handleFile(file) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      alert('Please upload a PDF file.');
+      fileInput.value = '';
+      fileName.textContent = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size exceeds 5 MB limit.');
+      fileInput.value = '';
+      fileName.textContent = '';
+      return;
+    }
+    fileName.textContent = '📄 ' + file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', function () {
+      if (this.files && this.files[0]) handleFile(this.files[0]);
+    });
+  }
+
+  if (fileDrop) {
+    ['dragenter', 'dragover'].forEach(function (evt) {
+      fileDrop.addEventListener(evt, function (e) {
+        e.preventDefault();
+        fileDrop.classList.add('dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function (evt) {
+      fileDrop.addEventListener(evt, function (e) {
+        e.preventDefault();
+        fileDrop.classList.remove('dragover');
+      });
+    });
+    fileDrop.addEventListener('drop', function (e) {
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        fileInput.files = e.dataTransfer.files;
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var formData = new FormData(form);
+      var subSelect = document.getElementById('upSubject');
+      var subjectName = subSelect && subSelect.selectedIndex > -1 ? subSelect.options[subSelect.selectedIndex].text : '';
+      formData.append('subject_name', subjectName);
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Analyzing PDF with AI...';
+      statusDiv.className = 'upload-status info';
+      statusDiv.textContent = 'Scanning PDF text, verifying question format & checking subject with AI...';
+      statusDiv.style.display = 'block';
+
+      try {
+        var res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        var data = await res.json();
+
+        if (!res.ok) {
+          statusDiv.className = 'upload-status error';
+          statusDiv.textContent = '❌ ' + (data.error || 'Upload failed. Please try again.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Upload & Submit for Review';
+          return;
+        }
+
+        if (data.warnings && data.warnings.length) {
+          statusDiv.className = 'upload-status warning';
+          statusDiv.innerHTML = '⚠️ <strong>Paper submitted with advisory note:</strong><br/>' +
+            data.warnings.map(function (w) { return '• ' + esc(w); }).join('<br/>') +
+            '<br/><span style="font-size:0.8rem">Our admin will review and approve it shortly. Thank you!</span>';
+        } else {
+          statusDiv.className = 'upload-status success';
+          statusDiv.textContent = '🎉 ' + (data.message || 'Paper submitted successfully! It will be reviewed and published soon.');
+        }
+
+        submitBtn.textContent = 'Uploaded!';
+        setTimeout(function () {
+          form.reset();
+          fileName.textContent = '';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Upload & Submit for Review';
+          closeUploadModal();
+        }, 4000);
+
+      } catch (err) {
+        statusDiv.className = 'upload-status error';
+        statusDiv.textContent = '❌ Connection error: ' + err.message;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Upload & Submit for Review';
+      }
+    });
+  }
+})();
+
+/* ---- load approved papers from backend ---- */
+function fetchApprovedPapers() {
+  fetch('/api/papers')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data.papers || !data.papers.length) return;
+      var changed = false;
+      data.papers.forEach(function (p) {
+        var g = groupById(p.group_id);
+        if (!g) return;
+        var s = subjectById(g, p.subject_id);
+        if (!s) return;
+        s.papers = s.papers || [];
+        var exists = s.papers.some(function (item) {
+          return item.id === p.id || (item.title === p.title && item.year === p.year && item.exam === p.exam_type);
+        });
+        if (!exists) {
+          s.papers.push({
+            id: p.id,
+            title: p.title,
+            year: p.year,
+            exam: p.exam_type,
+            sem: p.semester,
+            file: p.url,
+            contributor: p.contributor_name
+          });
+          changed = true;
+        }
+      });
+      if (changed) render();
+    })
+    .catch(function () {});
+}
+fetchApprovedPapers();
   </script>
 </body>
 </html>

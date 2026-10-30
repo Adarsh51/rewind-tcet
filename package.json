@@ -1,0 +1,10 @@
+{
+  "name": "tcet-pyqs",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.0",
+    "busboy": "^1.6.0",
+    "pdf-parse": "^1.1.1"
+  }
+}
