@@ -286,15 +286,6 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
 .paper-wa-btn svg {
   display: block; width: 18px; height: 18px;
 }
-.site-toast {
-  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(30px);
-  background: rgba(20, 26, 46, 0.94); color: #ffffff; padding: 10px 20px;
-  border-radius: 999px; font-size: .86rem; font-weight: 500;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28); backdrop-filter: blur(8px);
-  z-index: 9999; opacity: 0; pointer-events: none;
-  transition: opacity .25s ease, transform .25s ease; white-space: nowrap;
-}
-.site-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .paper.is-soon { opacity: .7; }
 .soon {
   flex: none; font-size: .82rem; font-weight: 600; color: var(--muted); white-space: nowrap;
@@ -1131,23 +1122,6 @@ function renderSubject(g, s, initialYear) {
   document.getElementById('search').addEventListener('input', function (e) { draw(e.target.value); });
 }
 
-/* ---- toast notification ---- */
-function showToast(msg) {
-  var toast = document.getElementById('siteToast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'siteToast';
-    toast.className = 'site-toast';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = msg;
-  toast.classList.add('show');
-  clearTimeout(toast._timeout);
-  toast._timeout = setTimeout(function () {
-    toast.classList.remove('show');
-  }, 3500);
-}
-
 /* ---- WhatsApp sharing helpers ---- */
 function getSiteBaseUrl() {
   if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.indexOf('http') === 0) {
@@ -1156,7 +1130,7 @@ function getSiteBaseUrl() {
   return 'https://rewindxtcet.vercel.app';
 }
 
-async function sharePaperWhatsApp(btn, subName, title, year, exam, gId, sId, fileUrl) {
+function sharePaperWhatsApp(btn, subName, title, year, exam, gId, sId, fileUrl) {
   var base = getSiteBaseUrl();
   var siteDomain = 'rewindxtcet.vercel.app';
   var siteUrl = 'https://' + siteDomain;
@@ -1165,65 +1139,16 @@ async function sharePaperWhatsApp(btn, subName, title, year, exam, gId, sId, fil
   // Exact note format: "i got this particular subject ise1 paper on rewindxtcet.vercel.app"
   var examLabel = title || exam || 'paper';
   var paperDesc = (subName ? subName + ' ' : '') + examLabel;
-  var note = 'I got this ' + paperDesc + (year ? ' (' + year + ')' : '') + ' paper on ' + siteDomain;
-  var fullShareText = note + '\n' + link;
+  var yearStr = year ? ' (' + year + ')' : '';
 
-  // Auto-copy the caption to clipboard immediately so the user can easily paste it into WhatsApp's caption box if the OS drops EXTRA_TEXT
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    try { await navigator.clipboard.writeText(fullShareText); } catch (e) {}
-  }
+  // Direct download link to the entire PDF
+  var directPdf = fileUrl ? (fileUrl.indexOf('http') === 0 ? fileUrl : (base + '/' + fileUrl.replace(/^\//, ''))) : '';
 
-  if (btn) {
-    btn.disabled = true;
-    btn.style.opacity = '0.5';
-  }
+  var msg = 'I got this ' + paperDesc + yearStr + ' paper on ' + siteDomain + '\n\n' +
+            (directPdf ? '📄 Download/View PDF: ' + directPdf + '\n' : '') +
+            '🌐 Rewind TCET: ' + link;
 
-  try {
-    // If the browser supports native Web Share API with files (Android Chrome, iOS Safari)
-    if (fileUrl && navigator.share) {
-      try {
-        var resolvedUrl = fileUrl.indexOf('http') === 0 ? fileUrl : (base + '/' + fileUrl.replace(/^\//, ''));
-        var response = await fetch(resolvedUrl);
-        if (response.ok) {
-          var blob = await response.blob();
-          var cleanName = (paperDesc + (year ? '-' + year : '')).replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
-          var file = new File([blob], cleanName + '.pdf', { type: 'application/pdf' });
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            showToast('PDF ready! Caption copied to clipboard 📋');
-            var shareData = {
-              files: [file],
-              title: note,
-              text: fullShareText,
-              url: link
-            };
-            if (navigator.canShare(shareData)) {
-              await navigator.share(shareData);
-            } else {
-              await navigator.share({
-                files: [file],
-                title: note,
-                text: fullShareText
-              });
-            }
-            return;
-          }
-        }
-      } catch (shareErr) {
-        if (shareErr.name === 'AbortError') return;
-        console.warn('Web Share with file failed, falling back to link:', shareErr);
-      }
-    }
-
-    // Fallback for Desktop WhatsApp Web or browsers where file sharing is unsupported
-    var directPdf = fileUrl ? (fileUrl.indexOf('http') === 0 ? fileUrl : (base + '/' + fileUrl.replace(/^\//, ''))) : '';
-    var desktopMsg = fullShareText + (directPdf ? '\n\n📄 PDF link: ' + directPdf : '');
-    window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(desktopMsg), '_blank');
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.style.opacity = '1';
-    }
-  }
+  window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
 }
 
 /* ---- router ---- */
