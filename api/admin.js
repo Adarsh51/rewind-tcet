@@ -16,20 +16,30 @@ function cors(res) {
 }
 
 function auth(req) {
-  const adminPass = process.env.ADMIN_PASSWORD || 'rewind2026';
-  return req.headers['x-admin-key'] === adminPass;
+  const adminPass = process.env.ADMIN_PASSWORD;
+  if (!adminPass) {
+    console.error('ADMIN_PASSWORD environment variable is not configured.');
+    return false;
+  }
+  const providedKey = req.headers['x-admin-key'];
+  return !!providedKey && providedKey === adminPass;
 }
 
 module.exports = async function handler(req, res) {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (!auth(req)) return res.status(401).json({ error: 'Unauthorized' });
+  if (!auth(req)) return res.status(401).json({ error: 'Unauthorized: Invalid admin key' });
 
   const url = new URL(req.url, `http://${req.headers.host}`);
   const action = url.searchParams.get('action');
 
   try {
     const supabase = getSupabase();
+
+    // VERIFY key
+    if (action === 'verify') {
+      return res.status(200).json({ success: true, message: 'Authenticated' });
+    }
 
     // LIST submissions
     if (req.method === 'GET' && (!action || action === 'list')) {

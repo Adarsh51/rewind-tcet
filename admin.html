@@ -125,8 +125,9 @@ main { max-width: 1040px; margin: 0 auto; padding: 30px 20px 60px; }
       <h2>Admin Sign In</h2>
       <p>Enter your admin password to review uploaded question papers.</p>
       <form id="loginForm">
-        <input type="password" id="adminKey" placeholder="Admin Password" required autofocus />
-        <button type="submit" class="btn btn-primary">Sign In</button>
+        <input type="password" id="adminKey" placeholder="Admin Password" required autofocus autocomplete="current-password" />
+        <button type="submit" id="loginBtn" class="btn btn-primary">Sign In</button>
+        <div id="loginError" style="display:none; color:#dc2626; font-size:.85rem; margin-top:14px; font-weight:500;"></div>
       </form>
     </div>
 
@@ -158,34 +159,97 @@ main { max-width: 1040px; margin: 0 auto; padding: 30px 20px 60px; }
   </main>
 
   <script>
+    // Pure in-memory key — never saved to localStorage, sessionStorage or cookies
+    // Automatically resets and logs out on every page refresh or tab close
+    var API_KEY = null;
     var currentTab = 'pending';
-    var API_KEY = sessionStorage.getItem('rewind-admin-key');
 
-    if (API_KEY) {
-      showPanel();
-    }
-
-    document.getElementById('loginForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      var key = document.getElementById('adminKey').value.trim();
-      if (!key) return;
-      API_KEY = key;
-      sessionStorage.setItem('rewind-admin-key', key);
-      showPanel();
-    });
-
-    document.getElementById('logoutBtn').addEventListener('click', function () {
+    // Clear any previous persistent storage
+    try {
       sessionStorage.removeItem('rewind-admin-key');
-      location.reload();
-    });
+      localStorage.removeItem('rewind-admin-key');
+    } catch (e) {}
+
+    var loginForm = document.getElementById('loginForm');
+    var loginBtn = document.getElementById('loginBtn');
+    var loginError = document.getElementById('loginError');
+    var adminKeyInput = document.getElementById('adminKey');
+
+    function showLogin(errMsg) {
+      API_KEY = null;
+      document.getElementById('adminPanel').style.display = 'none';
+      document.getElementById('logoutBtn').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'block';
+      adminKeyInput.value = '';
+      if (errMsg) {
+        loginError.textContent = errMsg;
+        loginError.style.display = 'block';
+      } else {
+        loginError.style.display = 'none';
+      }
+      adminKeyInput.focus();
+    }
 
     function showPanel() {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('adminPanel').style.display = 'block';
       document.getElementById('logoutBtn').style.display = 'inline-flex';
+      loginError.style.display = 'none';
       loadStats();
       loadSubmissions(currentTab);
     }
+
+    loginForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var key = adminKeyInput.value.trim();
+      if (!key) return;
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Verifying...';
+      loginError.style.display = 'none';
+
+      try {
+        var res = await fetch('/api/admin?action=verify', {
+          headers: { 'X-Admin-Key': key }
+        });
+
+        if (res.status === 401) {
+          loginError.textContent = '❌ Invalid admin password. Access denied.';
+          loginError.style.display = 'block';
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Sign In';
+          adminKeyInput.value = '';
+          adminKeyInput.focus();
+          return;
+        }
+
+        if (!res.ok) {
+          var errData = await res.json().catch(function () { return {}; });
+          loginError.textContent = '❌ ' + (errData.error || 'Server error (' + res.status + ')');
+          loginError.style.display = 'block';
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Sign In';
+          return;
+        }
+
+        // Successfully verified: store ONLY in memory for current page lifecycle
+        API_KEY = key;
+        adminKeyInput.value = '';
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Sign In';
+        showPanel();
+
+      } catch (err) {
+        loginError.textContent = '❌ Connection failed: ' + err.message;
+        loginError.style.display = 'block';
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Sign In';
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', function () {
+      showLogin('Logged out successfully.');
+    });
 
     function setTab(status) {
       currentTab = status;
@@ -196,14 +260,13 @@ main { max-width: 1040px; margin: 0 auto; padding: 30px 20px 60px; }
     }
 
     async function loadStats() {
+      if (!API_KEY) return;
       try {
         var res = await fetch('/api/admin?action=stats', {
           headers: { 'X-Admin-Key': API_KEY }
         });
         if (res.status === 401) {
-          alert('Invalid admin password.');
-          sessionStorage.removeItem('rewind-admin-key');
-          location.reload();
+          showLogin('Session unauthorized. Please sign in again.');
           return;
         }
         var data = await res.json();
@@ -216,6 +279,7 @@ main { max-width: 1040px; margin: 0 auto; padding: 30px 20px 60px; }
     }
 
     async function loadSubmissions(status) {
+      if (!API_KEY) return;
       var container = document.getElementById('submissionsList');
       container.innerHTML = '<p class="empty">Loading ' + status + ' papers...</p>';
 
@@ -223,6 +287,10 @@ main { max-width: 1040px; margin: 0 auto; padding: 30px 20px 60px; }
         var res = await fetch('/api/admin?status=' + status, {
           headers: { 'X-Admin-Key': API_KEY }
         });
+        if (res.status === 401) {
+          showLogin('Session unauthorized. Please sign in again.');
+          return;
+        }
         var data = await res.json();
         var subs = data.submissions || [];
 
@@ -268,6 +336,7 @@ main { max-width: 1040px; margin: 0 auto; padding: 30px 20px 60px; }
     }
 
     async function approveSub(id) {
+      if (!API_KEY) { showLogin(); return; }
       if (!confirm('Approve this paper and publish it live on the site?')) return;
       try {
         var res = await fetch('/api/admin?action=approve', {
@@ -278,6 +347,10 @@ main { max-width: 1040px; margin: 0 auto; padding: 30px 20px 60px; }
           },
           body: JSON.stringify({ id: id })
         });
+        if (res.status === 401) {
+          showLogin('Session unauthorized. Please sign in again.');
+          return;
+        }
         var data = await res.json();
         if (data.success) {
           alert('Paper approved and published live!');
@@ -292,6 +365,7 @@ main { max-width: 1040px; margin: 0 auto; padding: 30px 20px 60px; }
     }
 
     async function rejectSub(id) {
+      if (!API_KEY) { showLogin(); return; }
       var reason = prompt('Reason for rejection (optional):', 'Subject mismatch / poor quality');
       if (reason === null) return;
       try {
@@ -303,6 +377,10 @@ main { max-width: 1040px; margin: 0 auto; padding: 30px 20px 60px; }
           },
           body: JSON.stringify({ id: id, reason: reason })
         });
+        if (res.status === 401) {
+          showLogin('Session unauthorized. Please sign in again.');
+          return;
+        }
         var data = await res.json();
         if (data.success) {
           alert('Submission rejected.');
