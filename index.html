@@ -460,6 +460,69 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
 [data-theme="dark"] .upload-status.success { background: #11321f; color: #74d79a; }
 [data-theme="dark"] .upload-status.error { background: #3b1111; color: #fca5a5; }
 [data-theme="dark"] .upload-status.warning { background: #3a2a12; color: #f0b45e; }
+/* ---- animated success checkmark ---- */
+.success-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 10px 10px;
+}
+.checkmark-wrap {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+  background: #d9f3e2;
+}
+[data-theme="dark"] .checkmark-wrap {
+  background: #11321f;
+}
+.checkmark-svg {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: block;
+}
+.checkmark-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 3.5;
+  stroke-miterlimit: 10;
+  stroke: #16a34a;
+  fill: none;
+  animation: check-circle .55s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+.checkmark-check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: check-stroke .35s cubic-bezier(0.65, 0, 0.45, 1) .55s forwards;
+}
+@keyframes check-circle {
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes check-stroke {
+  100% { stroke-dashoffset: 0; }
+}
+.success-screen h3 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--text);
+}
+.success-screen p {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.5;
+  max-width: 36ch;
+}
 .paper-contributor {
   margin: 2px 0 0;
   font-size: .74rem;
@@ -582,6 +645,19 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
         <button type="submit" class="submit-btn" id="submitBtn">Upload & Submit for Review</button>
         <div class="upload-status" id="uploadStatus"></div>
       </form>
+
+      <!-- Animated Success Screen -->
+      <div id="uploadSuccess" class="success-screen">
+        <div class="checkmark-wrap">
+          <svg class="checkmark-svg" viewBox="0 0 52 52">
+            <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+            <path class="checkmark-check" fill="none" stroke="#16a34a" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+          </svg>
+        </div>
+        <h3>Paper submitted successfully!</h3>
+        <p>It will be published soon. Thank you for your contribution!</p>
+        <button type="button" class="contribute-btn" onclick="closeUploadModal()" style="margin-top:0">Close</button>
+      </div>
     </div>
   </div>
 
@@ -872,9 +948,12 @@ function populateSubjects(groupId, selectedSubjectId) {
 function openUploadModal(groupId, subjectId, examType) {
   var modal = document.getElementById('uploadModal');
   var form = document.getElementById('uploadForm');
+  var successScreen = document.getElementById('uploadSuccess');
   var statusDiv = document.getElementById('uploadStatus');
   if (!modal || !form) return;
 
+  form.style.display = 'block';
+  if (successScreen) successScreen.style.display = 'none';
   form.reset();
   document.getElementById('fileName').textContent = '';
   if (statusDiv) {
@@ -984,9 +1063,9 @@ function closeUploadModal() {
       formData.append('subject_name', subjectName);
 
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Analyzing PDF with AI...';
+      submitBtn.textContent = 'Uploading paper...';
       statusDiv.className = 'upload-status info';
-      statusDiv.textContent = 'Scanning PDF text, verifying question format & checking subject with AI...';
+      statusDiv.textContent = 'Uploading PDF... please wait a moment.';
       statusDiv.style.display = 'block';
 
       try {
@@ -1010,28 +1089,18 @@ function closeUploadModal() {
           return;
         }
 
-        if (data.warnings && data.warnings.length) {
-          statusDiv.className = 'upload-status warning';
-          statusDiv.innerHTML = '⚠️ <strong>Paper submitted with advisory note:</strong><br/>' +
-            data.warnings.map(function (w) { return '• ' + esc(w); }).join('<br/>') +
-            '<br/><span style="font-size:0.8rem">Our admin will review and approve it shortly. Thank you!</span>';
-        } else {
-          statusDiv.className = 'upload-status success';
-          statusDiv.textContent = '🎉 ' + (data.message || 'Paper submitted successfully! It will be reviewed and published soon.');
+        // Show animated success tick mark and message
+        form.style.display = 'none';
+        var successScreen = document.getElementById('uploadSuccess');
+        if (successScreen) {
+          successScreen.style.display = 'flex';
         }
-
-        submitBtn.textContent = 'Uploaded!';
-        setTimeout(function () {
-          form.reset();
-          fileName.textContent = '';
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Upload & Submit for Review';
-          closeUploadModal();
-        }, 4000);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Upload & Submit for Review';
 
       } catch (err) {
         statusDiv.className = 'upload-status error';
-        statusDiv.textContent = '❌ Connection error: ' + err.message;
+        statusDiv.textContent = '❌ ' + err.message;
         submitBtn.disabled = false;
         submitBtn.textContent = 'Upload & Submit for Review';
       }

@@ -232,16 +232,6 @@ main { max-width: 1040px; margin: 0 auto; padding: 30px 20px 60px; }
         }
 
         container.innerHTML = subs.map(function (s) {
-          var mod = s.moderation_result || {};
-          var ai = mod.ai || {};
-          var warnings = mod.warnings || [];
-
-          var aiStatus = ai.is_inappropriate
-            ? '<span class="ai-flag">❌ Flagged as inappropriate</span>'
-            : (warnings.length
-                ? '<span class="ai-flag">⚠️ Advisory warnings present</span>'
-                : '<span class="ai-pass">✅ Passed all AI & keyword checks</span>');
-
           var bucketBase = 'https://bpdyqvdebwaxcyipkftt.supabase.co/storage/v1/object/public/papers/';
           var pdfUrl = bucketBase + s.file_path;
 
@@ -264,11 +254,6 @@ main { max-width: 1040px; margin: 0 auto; padding: 30px 20px 60px; }
                   '<span>Date: ' + new Date(s.created_at).toLocaleDateString() + '</span>' +
                 '</div>' +
               '</div>' +
-            '</div>' +
-            '<div class="ai-box">' +
-              '<div><strong>AI Moderation:</strong> ' + aiStatus + '</div>' +
-              (ai.reason ? '<div style="margin-top:4px;color:var(--muted)">AI Analysis: ' + escapeHtml(ai.reason) + '</div>' : '') +
-              (warnings.length ? '<div style="margin-top:4px;color:#d97706">' + warnings.map(escapeHtml).join(' | ') + '</div>' : '') +
             '</div>' +
             '<div class="sub-actions">' +
               '<a href="' + pdfUrl + '" target="_blank" rel="noopener" class="btn btn-secondary">👁️ View Uploaded PDF</a>' +
