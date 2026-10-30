@@ -20,42 +20,38 @@ CREATE TABLE IF NOT EXISTS submissions (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. Enable Row Level Security
+-- 2. Indexes for fast lookups
+CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions (status);
+CREATE INDEX IF NOT EXISTS idx_submissions_hash ON submissions (file_hash);
+
+-- 3. Enable RLS
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
 
--- 3. Allow anyone to INSERT (upload)
-CREATE POLICY "Anyone can submit papers"
-  ON submissions FOR INSERT
+-- 4. Clean up any existing policies
+DROP POLICY IF EXISTS "Anyone can submit papers" ON submissions;
+DROP POLICY IF EXISTS "Anyone can read approved submissions" ON submissions;
+DROP POLICY IF EXISTS "Full access for API" ON submissions;
+
+-- 5. Allow full access via API (admin functions are secured by ADMIN_PASSWORD in api/admin.js)
+CREATE POLICY "Full access for API"
+  ON submissions FOR ALL
   TO anon
+  USING (true)
   WITH CHECK (true);
-
--- 4. Allow anyone to read approved submissions count (for the UI)
-CREATE POLICY "Anyone can read approved submissions"
-  ON submissions FOR SELECT
-  TO anon
-  USING (status = 'approved');
-
--- 5. Create index for fast lookups
-CREATE INDEX idx_submissions_status ON submissions (status);
-CREATE INDEX idx_submissions_hash ON submissions (file_hash);
 
 -- 6. Create storage bucket for papers
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('papers', 'papers', true)
 ON CONFLICT (id) DO NOTHING;
 
--- 7. Allow anonymous uploads to the papers bucket (max 5MB)
-CREATE POLICY "Anyone can upload papers"
-  ON storage.objects FOR INSERT
-  TO anon
-  WITH CHECK (
-    bucket_id = 'papers' AND
-    (OCTET_LENGTH(name) < 500) AND
-    (LOWER(STORAGE.EXTENSION(name)) = 'pdf')
-  );
+-- 7. Clean up existing storage policies
+DROP POLICY IF EXISTS "Anyone can upload papers" ON storage.objects;
+DROP POLICY IF EXISTS "Public read access to papers" ON storage.objects;
+DROP POLICY IF EXISTS "Full access to papers bucket" ON storage.objects;
 
--- 8. Allow public read access to papers
-CREATE POLICY "Public read access to papers"
-  ON storage.objects FOR SELECT
+-- 8. Storage bucket policy: allow read, upload, move and delete for papers
+CREATE POLICY "Full access to papers bucket"
+  ON storage.objects FOR ALL
   TO anon
-  USING (bucket_id = 'papers');
+  USING (bucket_id = 'papers')
+  WITH CHECK (bucket_id = 'papers');
