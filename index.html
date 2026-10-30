@@ -269,6 +269,37 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
 }
 .dl:hover { transform: translateY(-1px); box-shadow: 0 8px 20px var(--ring); }
 .dl-ic { font-size: 1rem; }
+.btn-preview {
+  flex: none; display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 14px; border-radius: 11px; font-weight: 600; font-size: .88rem;
+  color: var(--text); background: var(--surface-2); border: 1px solid var(--line);
+  cursor: pointer; transition: all .15s ease;
+}
+.btn-preview:hover {
+  background: var(--accent-soft); color: var(--accent);
+  border-color: var(--ring); transform: translateY(-1px);
+}
+.paper-actions {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.wa-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 15px; border-radius: 12px; font-size: .86rem; font-weight: 600;
+  color: #ffffff; background: #25d366; border: none; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.28); transition: all .15s ease;
+  white-space: nowrap; font-family: inherit;
+}
+.wa-btn:hover {
+  background: #20bd5a; transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.4);
+}
+.wa-btn-sm {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 9px; font-size: .82rem; font-weight: 600;
+  color: #ffffff; background: #25d366; border: none; cursor: pointer;
+  transition: all .15s ease; font-family: inherit;
+}
+.wa-btn-sm:hover { background: #20bd5a; }
 .paper.is-soon { opacity: .7; }
 .soon {
   flex: none; font-size: .82rem; font-weight: 600; color: var(--muted); white-space: nowrap;
@@ -447,6 +478,62 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
   transition: transform .25s ease;
 }
 .modal-overlay.active .modal { transform: translateY(0) scale(1); }
+/* ---- pdf preview modal styles ---- */
+.preview-modal-content {
+  max-width: 920px;
+  width: 95vw;
+  height: 88vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+.preview-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+.preview-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.preview-body {
+  position: relative;
+  flex: 1;
+  background: #2f343b;
+  overflow: hidden;
+}
+.preview-body iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+.preview-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: .95rem;
+  font-weight: 500;
+  background: rgba(20, 26, 46, 0.7);
+  z-index: 1;
+}
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 20px;
@@ -646,7 +733,10 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
   .search-wrap { max-width: none; }
   .paper { flex-direction: column; align-items: stretch; gap: 14px; }
   .paper-info { justify-content: flex-start; }
-  .dl { justify-content: center; }
+  .paper-actions { width: 100%; display: flex; gap: 8px; }
+  .btn-preview, .dl { flex: 1; justify-content: center; text-align: center; }
+  .preview-modal-content { width: 98vw; height: 92vh; border-radius: 14px; }
+  .preview-header { padding: 10px 14px; }
 }
 @media (max-width: 480px) {
   #navUploadBtn { padding: 7px 12px; font-size: .78rem; }
@@ -759,6 +849,30 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
         <h3>Paper submitted successfully!</h3>
         <p>It will be published soon. Thank you for your contribution!</p>
         <button type="button" class="contribute-btn" onclick="closeUploadModal()" style="margin-top:0">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Preview Modal -->
+  <div class="modal-overlay" id="previewModal">
+    <div class="modal preview-modal-content">
+      <div class="preview-header">
+        <div class="preview-title-wrap">
+          <span id="previewExamTag" class="tag tag-ise">ISE</span>
+          <div>
+            <h2 id="previewTitle" style="font-size:1.05rem; margin:0">Question Paper</h2>
+            <p id="previewSubtitle" class="muted" style="margin:2px 0 0; font-size:.8rem">TCET PYQ</p>
+          </div>
+        </div>
+        <div class="preview-actions">
+          <button type="button" id="previewWaBtn" class="wa-btn-sm" title="Share this paper on WhatsApp">💬 Share</button>
+          <a id="previewDlBtn" href="#" download target="_blank" rel="noopener" class="dl" style="padding:7px 14px; font-size:.82rem;">Download &darr;</a>
+          <button class="modal-close" onclick="closePdfPreview()" aria-label="Close">✕</button>
+        </div>
+      </div>
+      <div class="preview-body">
+        <div id="previewLoader" class="preview-loader">Loading PDF preview...</div>
+        <iframe id="previewIframe" src="about:blank" title="PDF Preview"></iframe>
       </div>
     </div>
   </div>
@@ -923,6 +1037,7 @@ function renderHome() {
     '<p class="hero-tag">' + esc(SITE.tagline) + '</p>' +
     '<div class="like-wrap">' +
     '<button class="contribute-btn" id="heroUploadBtn" type="button" onclick="openUploadModal()"><span class="btn-icon">📤</span> Have a PYQ? Upload it here</button>' +
+    '<button class="wa-btn" type="button" onclick="shareSiteWhatsApp()" style="margin-top:10px;"><span style="font-size:1.1rem">💬</span> Share with Classmates on WhatsApp</button>' +
     '<p class="like-nudge">Found this helpful? Show some love 👇</p>' +
     '<button class="like-btn' + (localStorage.getItem('rewind-liked') ? ' liked' : '') + '" id="likeBtn" aria-label="Like this site">' +
     '<span class="like-heart">' + (localStorage.getItem('rewind-liked') ? '❤️' : '🤍') + '</span>' +
@@ -965,7 +1080,10 @@ function renderSubjects(g) {
 function paperCard(p, gId, sId) {
   var action = p.soon
     ? '<button class="soon" type="button" onclick="openUploadModal(\'' + esc(gId || '') + '\', \'' + esc(sId || '') + '\', \'' + esc(p.exam || '') + '\', \'' + esc(p.year || '') + '\', \'' + esc(p.title || '') + '\')">Upload this &rarr;</button>'
-    : '<a class="dl" href="' + esc(p.file) + '" download target="_blank" rel="noopener">Download <span class="dl-ic" aria-hidden="true">&darr;</span></a>';
+    : '<div class="paper-actions">' +
+        '<button class="btn-preview" type="button" onclick="openPdfPreview(\'' + esc(p.file) + '\', \'' + esc(p.title || 'Question Paper') + '\', \'' + esc(p.year || '') + '\', \'' + esc(p.exam || 'PYQ') + '\')">👁️ Preview</button>' +
+        '<a class="dl" href="' + esc(p.file) + '" download target="_blank" rel="noopener">Download <span class="dl-ic" aria-hidden="true">&darr;</span></a>' +
+      '</div>';
   var credit = (p.contributor && p.contributor !== 'Anonymous')
     ? '<p class="paper-contributor">Contributed by ' + esc(p.contributor) + '</p>'
     : '';
@@ -1019,7 +1137,10 @@ function renderSubject(g, s, initialYear) {
   view.innerHTML = '<nav class="crumbs"><a href="#">Home</a><span>/</span>' +
     '<a href="#g=' + g.id + '">' + esc(g.name) + '</a><span>/</span><strong>' + esc(s.name) + '</strong></nav>' +
     '<section class="page-head"><h1>' + esc(s.name) + '</h1>' +
-    '<div class="search-wrap"><input id="search" class="search" type="search" placeholder="Search papers…"/></div></section>' +
+    '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">' +
+      '<button class="wa-btn" type="button" onclick="shareSubjectWhatsApp(\'' + esc(s.name) + '\', \'' + esc(g.id) + '\', \'' + esc(s.id) + '\')"><span class="wa-icon">💬</span> Share on WhatsApp</button>' +
+      '<div class="search-wrap"><input id="search" class="search" type="search" placeholder="Search papers…"/></div>' +
+    '</div></section>' +
     tabsHtml +
     '<section id="content"></section>';
 
@@ -1096,6 +1217,67 @@ function renderSubject(g, s, initialYear) {
 
   draw('');
   document.getElementById('search').addEventListener('input', function (e) { draw(e.target.value); });
+}
+
+/* ---- WhatsApp sharing helpers ---- */
+function shareSiteWhatsApp() {
+  var url = 'https://rewind-tcet.vercel.app';
+  var msg = '📚 *Rewind — TCET First Year PYQs*\nDownload past question papers (ISE 1, ISE 2, ESE) for Group I & Group II subjects, or upload yours:\n' + url;
+  window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function shareSubjectWhatsApp(subName, gId, sId) {
+  var url = 'https://rewind-tcet.vercel.app/#g=' + gId + '&s=' + sId;
+  var msg = '📄 *' + subName + ' PYQs (TCET First Year)*\nDownload past ISE 1, ISE 2 and ESE papers on Rewind:\n' + url;
+  window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function sharePaperWhatsApp(title, year, exam, fileUrl) {
+  var curHash = location.hash || '';
+  var url = 'https://rewind-tcet.vercel.app/' + curHash;
+  var msg = '📝 *TCET ' + exam + ' ' + title + ' (' + year + ')* question paper is on Rewind:\n' + url;
+  window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
+}
+
+/* ---- PDF Preview Modal logic ---- */
+var currentPreviewFile = null;
+
+function openPdfPreview(fileUrl, title, year, exam) {
+  var modal = document.getElementById('previewModal');
+  var iframe = document.getElementById('previewIframe');
+  var titleEl = document.getElementById('previewTitle');
+  var subEl = document.getElementById('previewSubtitle');
+  var tagEl = document.getElementById('previewExamTag');
+  var dlBtn = document.getElementById('previewDlBtn');
+  var loader = document.getElementById('previewLoader');
+  if (!modal || !iframe) return;
+
+  currentPreviewFile = { fileUrl: fileUrl, title: title, year: year, exam: exam };
+
+  if (titleEl) titleEl.textContent = title || 'Question Paper';
+  if (subEl) subEl.textContent = (year ? year + ' · ' : '') + 'TCET First Year PYQ';
+  if (tagEl) {
+    tagEl.textContent = exam || 'PYQ';
+    tagEl.className = 'tag ' + examClass(exam);
+  }
+  if (dlBtn) dlBtn.href = fileUrl;
+
+  if (loader) loader.style.display = 'flex';
+  iframe.src = fileUrl + '#toolbar=1';
+  iframe.onload = function () {
+    if (loader) loader.style.display = 'none';
+  };
+
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePdfPreview() {
+  var modal = document.getElementById('previewModal');
+  var iframe = document.getElementById('previewIframe');
+  if (modal) modal.classList.remove('active');
+  if (iframe) iframe.src = 'about:blank';
+  document.body.style.overflow = '';
 }
 
 /* ---- router ---- */
@@ -1499,8 +1681,27 @@ async function convertImagesToPdf(imageFiles, onProgress) {
     });
   }
   window.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeUploadModal();
+    if (e.key === 'Escape') {
+      closeUploadModal();
+      closePdfPreview();
+    }
   });
+
+  var previewModal = document.getElementById('previewModal');
+  if (previewModal) {
+    previewModal.addEventListener('click', function (e) {
+      if (e.target === previewModal) closePdfPreview();
+    });
+  }
+
+  var previewWaBtn = document.getElementById('previewWaBtn');
+  if (previewWaBtn) {
+    previewWaBtn.addEventListener('click', function () {
+      if (currentPreviewFile) {
+        sharePaperWhatsApp(currentPreviewFile.title, currentPreviewFile.year, currentPreviewFile.exam, currentPreviewFile.fileUrl);
+      }
+    });
+  }
 
   if (groupSelect) {
     groupSelect.addEventListener('change', function () {
