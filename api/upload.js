@@ -67,18 +67,107 @@ function parseMultipartBody(req) {
   });
 }
 
+function parseJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try { resolve(JSON.parse(body)); }
+      catch (e) { resolve({}); }
+    });
+    req.on('error', reject);
+  });
+}
+
 // ---- handler ----
 async function handler(req, res) {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const action = url.searchParams.get('action');
+
+  // Config endpoint for direct upload of large files
+  if (req.method === 'GET' && action === 'config') {
+    return res.status(200).json({
+      projectId: process.env.SUPABASE_PROJECT_ID || 'bpdyqvdebwaxcyipkftt',
+      anonKey: process.env.SUPABASE_ANON_KEY,
+      bucket: 'papers'
+    });
+  }
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
     const supabase = getSupabase();
-
     const contentType = req.headers['content-type'] || '';
+
+    // DIRECT UPLOAD COMPLETION (JSON)
+    if (contentType.includes('application/json')) {
+      const data = await parseJsonBody(req);
+      if (!data.direct_upload) {
+        return res.status(400).json({ error: 'Invalid request' });
+      }
+
+      const groupId = data.group_id;
+      const subjectId = data.subject_id;
+      const subjectName = data.subject_name;
+      let examType = data.exam_type;
+      const semester = data.semester;
+      const year = data.year;
+      let title = data.title || data.exam_choice;
+      const contributorName = data.contributor_name ? data.contributor_name.trim() : 'Anonymous';
+      const storagePath = data.file_path;
+      const fileSize = Number(data.file_size) || 0;
+      const fileHash = data.file_hash;
+
+      if (!groupId || !subjectId || !examType || !semester || !year || !title || !storagePath || !fileHash) {
+        return res.status(400).json({ error: 'Missing required submission fields.' });
+      }
+
+      // Check duplicate
+      const { data: existing } = await supabase
+        .from('submissions')
+        .select('id')
+        .eq('file_hash', fileHash)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        return res.status(409).json({ error: 'This exact question paper has already been submitted!' });
+      }
+
+      const { data: record, error: dbError } = await supabase
+        .from('submissions')
+        .insert({
+          group_id: groupId,
+          subject_id: subjectId,
+          subject_name: subjectName || subjectId,
+          exam_type: examType,
+          semester,
+          year,
+          title,
+          contributor_name: contributorName,
+          file_path: storagePath,
+          file_size: fileSize,
+          file_hash: fileHash,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        return res.status(500).json({ error: 'Database save failed: ' + dbError.message });
+      }
+
+      return res.status(200).json({
+        success: true,
+        id: record.id,
+        message: 'Paper submitted successfully! It will be published soon. Thank you for your contribution!'
+      });
+    }
+
     if (!contentType.includes('multipart/form-data')) {
-      return res.status(400).json({ error: 'Expected multipart/form-data' });
+      return res.status(400).json({ error: 'Expected multipart/form-data or application/json' });
     }
 
     const { fields, filePart } = await parseMultipartBody(req);

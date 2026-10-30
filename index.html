@@ -14,6 +14,8 @@
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
   </script>
   <script defer src="/_vercel/insights/script.js"></script>
+  <!-- jsPDF for in-browser photo to PDF conversion -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
 /* ===== TCET PYQs — styles ===== */
 :root {
@@ -495,6 +497,46 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
   margin-top: 8px; font-size: .82rem; color: var(--accent); font-weight: 600;
   word-break: break-all;
 }
+/* ---- photo / file previews ---- */
+.preview-list {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px;
+}
+.preview-item {
+  position: relative; width: 72px; height: 96px;
+  border-radius: 8px; border: 1px solid var(--line);
+  background: var(--surface-2); overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+.preview-item img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.preview-badge {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 2px 4px; background: rgba(0, 0, 0, 0.72);
+  color: #fff; font-size: .66rem; font-weight: 600; text-align: center;
+}
+.preview-remove {
+  position: absolute; top: 3px; right: 3px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(220, 38, 38, 0.9); color: #fff;
+  font-size: .7rem; display: grid; place-items: center;
+  border: none; cursor: pointer; padding: 0; line-height: 1;
+}
+.preview-pdf-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 10px;
+  font-size: .88rem; font-weight: 500; color: var(--text);
+  margin-top: 10px;
+}
+.preview-pdf-pill button {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 1rem; padding: 0 0 0 4px;
+}
+.preview-pdf-pill button:hover { color: #dc2626; }
+.preview-summary {
+  font-size: .82rem; color: var(--muted); margin-top: 8px;
+}
 .submit-btn {
   width: 100%; padding: 12px; border: none; border-radius: 12px;
   background: linear-gradient(100deg, var(--accent), var(--accent-2));
@@ -691,13 +733,14 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
           </div>
         </div>
         <div class="form-group">
-          <label>Question Paper (PDF)</label>
+          <label>Question Paper <span style="font-weight:400;text-transform:none">(PDF or Photos/Images)</span></label>
           <div class="file-drop" id="fileDrop">
-            <input type="file" name="file" accept=".pdf" required id="fileInput" />
-            <div class="file-drop-icon">📎</div>
-            <div class="file-drop-text">Drag & drop your PDF here or <strong>browse</strong></div>
-            <div class="file-name" id="fileName"></div>
+            <input type="file" name="file" accept=".pdf,image/jpeg,image/jpg,image/png,image/webp" multiple id="fileInput" />
+            <div class="file-drop-icon">📸 📄</div>
+            <div class="file-drop-text">Drag & drop PDF or photos (Page 1, Page 2...) or <strong>browse</strong></div>
+            <div style="font-size:.76rem; color:var(--muted); margin-top:4px;">Photos are auto-compressed &amp; converted to a single clean PDF</div>
           </div>
+          <div id="filePreviewContainer" style="display:none;"></div>
         </div>
         <button type="submit" class="submit-btn" id="submitBtn">Upload & Submit for Review</button>
         <div class="upload-status" id="uploadStatus"></div>
@@ -1132,7 +1175,7 @@ function openUploadModal(groupId, subjectId, examType, year, examTitle) {
   form.style.display = 'block';
   if (successScreen) successScreen.style.display = 'none';
   form.reset();
-  document.getElementById('fileName').textContent = '';
+  if (window.resetUploadFiles) window.resetUploadFiles();
   if (statusDiv) {
     statusDiv.style.display = 'none';
     statusDiv.className = 'upload-status';
@@ -1172,6 +1215,91 @@ function closeUploadModal() {
   document.body.style.overflow = '';
 }
 
+/* ---- in-browser image optimization & PDF conversion helpers ---- */
+function compressImageToDataUrl(file, maxDimension, quality) {
+  return new Promise(function (resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var img = new Image();
+      img.onload = function () {
+        var width = img.width;
+        var height = img.height;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve({
+          dataUrl: canvas.toDataURL('image/jpeg', quality),
+          width: width,
+          height: height
+        });
+      };
+      img.onerror = function () { reject(new Error('Could not read image: ' + file.name)); };
+      img.src = e.target.result;
+    };
+    reader.onerror = function () { reject(new Error('Failed to read file.')); };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function convertImagesToPdf(imageFiles, onProgress) {
+  var jsPDF = window.jspdf ? window.jspdf.jsPDF : null;
+  if (!jsPDF) {
+    throw new Error('PDF generator library could not be loaded. Please check your internet connection.');
+  }
+
+  var pdf = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+    compress: true
+  });
+
+  var pageWidth = 210;
+  var pageHeight = 297;
+  var margin = 8;
+  var usableWidth = pageWidth - (margin * 2);
+  var usableHeight = pageHeight - (margin * 2);
+
+  for (var i = 0; i < imageFiles.length; i++) {
+    if (onProgress) onProgress(i + 1, imageFiles.length);
+    if (i > 0) pdf.addPage('a4', 'portrait');
+
+    var comp = await compressImageToDataUrl(imageFiles[i], 1920, 0.82);
+    var imgRatio = comp.width / comp.height;
+    var pageRatio = usableWidth / usableHeight;
+
+    var renderWidth, renderHeight;
+    if (imgRatio > pageRatio) {
+      renderWidth = usableWidth;
+      renderHeight = usableWidth / imgRatio;
+    } else {
+      renderHeight = usableHeight;
+      renderWidth = usableHeight * imgRatio;
+    }
+
+    var x = margin + ((usableWidth - renderWidth) / 2);
+    var y = margin + ((usableHeight - renderHeight) / 2);
+
+    pdf.addImage(comp.dataUrl, 'JPEG', x, y, renderWidth, renderHeight, undefined, 'FAST');
+  }
+
+  var blob = pdf.output('blob');
+  return new File([blob], 'question-paper.pdf', { type: 'application/pdf' });
+}
+
 // Wire up global modal events
 (function () {
   var modal = document.getElementById('uploadModal');
@@ -1180,10 +1308,109 @@ function closeUploadModal() {
   var groupSelect = document.getElementById('upGroup');
   var fileInput = document.getElementById('fileInput');
   var fileDrop = document.getElementById('fileDrop');
-  var fileName = document.getElementById('fileName');
   var form = document.getElementById('uploadForm');
   var submitBtn = document.getElementById('submitBtn');
   var statusDiv = document.getElementById('uploadStatus');
+
+  var selectedUploadFiles = [];
+  var selectedFileType = null;
+
+  window.resetUploadFiles = function () {
+    selectedUploadFiles = [];
+    selectedFileType = null;
+    renderFilePreviews();
+  };
+
+  function renderFilePreviews() {
+    var container = document.getElementById('filePreviewContainer');
+    if (!container) return;
+
+    if (!selectedUploadFiles.length) {
+      container.innerHTML = '';
+      container.style.display = 'none';
+      if (fileInput) fileInput.value = '';
+      return;
+    }
+
+    container.style.display = 'block';
+
+    if (selectedFileType === 'pdf') {
+      var f = selectedUploadFiles[0];
+      var sizeMb = (f.size / (1024 * 1024)).toFixed(2);
+      var sizeNotice = f.size > 4.2 * 1024 * 1024
+        ? ' <span style="font-size:.78rem; color:var(--accent); font-weight:600;">(Large file: direct storage upload enabled)</span>'
+        : '';
+      container.innerHTML = '<div class="preview-pdf-pill">' +
+        '<span>📄 <strong>' + esc(f.name) + '</strong> (' + sizeMb + ' MB)' + sizeNotice + '</span>' +
+        '<button type="button" onclick="window.removeUploadFile(0)" title="Remove">✕</button>' +
+        '</div>';
+      return;
+    }
+
+    // Images
+    var html = '<div class="preview-summary">' +
+      '<span>📸 <strong>' + selectedUploadFiles.length + ' page' + (selectedUploadFiles.length === 1 ? '' : 's') + '</strong> selected (auto-converting to 1 PDF)</span>' +
+      '<span style="font-size:.75rem; color:var(--muted)">Max 8 pages</span>' +
+      '</div>';
+
+    html += '<div class="preview-list">';
+    selectedUploadFiles.forEach(function (f, idx) {
+      var url = URL.createObjectURL(f);
+      html += '<div class="preview-item">' +
+        '<img src="' + url + '" alt="Page ' + (idx + 1) + '" />' +
+        '<span class="preview-badge">Page ' + (idx + 1) + '</span>' +
+        '<button class="preview-remove" type="button" onclick="window.removeUploadFile(' + idx + ')" title="Remove this page">✕</button>' +
+        '</div>';
+    });
+    html += '</div>';
+
+    container.innerHTML = html;
+  }
+
+  window.removeUploadFile = function (idx) {
+    selectedUploadFiles.splice(idx, 1);
+    if (!selectedUploadFiles.length) {
+      selectedFileType = null;
+    }
+    renderFilePreviews();
+  };
+
+  function handleFiles(filesList) {
+    if (!filesList || !filesList.length) return;
+    var files = Array.from(filesList);
+
+    var hasPdf = files.some(function (f) {
+      return f.name.toLowerCase().endsWith('.pdf') || f.type === 'application/pdf';
+    });
+
+    if (hasPdf) {
+      var pdfFile = files.find(function (f) {
+        return f.name.toLowerCase().endsWith('.pdf') || f.type === 'application/pdf';
+      });
+      if (pdfFile.size > 25 * 1024 * 1024) {
+        alert('File size exceeds the maximum 25 MB limit.');
+        return;
+      }
+      selectedFileType = 'pdf';
+      selectedUploadFiles = [pdfFile];
+    } else {
+      var imgs = files.filter(function (f) {
+        var n = f.name.toLowerCase();
+        return n.endsWith('.jpg') || n.endsWith('.jpeg') || n.endsWith('.png') || n.endsWith('.webp') || (f.type && f.type.startsWith('image/'));
+      });
+      if (!imgs.length) {
+        alert('Please choose a genuine PDF document or photos (JPG/PNG).');
+        return;
+      }
+      if (selectedFileType === 'images') {
+        selectedUploadFiles = selectedUploadFiles.concat(imgs).slice(0, 8);
+      } else {
+        selectedFileType = 'images';
+        selectedUploadFiles = imgs.slice(0, 8);
+      }
+    }
+    renderFilePreviews();
+  }
 
   if (navBtn) navBtn.addEventListener('click', function () { openUploadModal(); });
   if (closeBtn) closeBtn.addEventListener('click', closeUploadModal);
@@ -1202,26 +1429,9 @@ function closeUploadModal() {
     });
   }
 
-  function handleFile(file) {
-    if (!file) return;
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
-      alert('Please upload a PDF file.');
-      fileInput.value = '';
-      fileName.textContent = '';
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size exceeds 5 MB limit.');
-      fileInput.value = '';
-      fileName.textContent = '';
-      return;
-    }
-    fileName.textContent = '📄 ' + file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
-  }
-
   if (fileInput) {
     fileInput.addEventListener('change', function () {
-      if (this.files && this.files[0]) handleFile(this.files[0]);
+      if (this.files && this.files.length) handleFiles(this.files);
     });
   }
 
@@ -1239,9 +1449,8 @@ function closeUploadModal() {
       });
     });
     fileDrop.addEventListener('drop', function (e) {
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        fileInput.files = e.dataTransfer.files;
-        handleFile(e.dataTransfer.files[0]);
+      if (e.dataTransfer.files && e.dataTransfer.files.length) {
+        handleFiles(e.dataTransfer.files);
       }
     });
   }
@@ -1249,26 +1458,136 @@ function closeUploadModal() {
   if (form) {
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
+
+      if (!selectedUploadFiles.length) {
+        alert('Please choose a PDF or take photos of the question paper.');
+        return;
+      }
+
+      var examChoiceEl = document.getElementById('upExamChoice');
+      var selectedOpt = examChoiceEl ? examChoiceEl.options[examChoiceEl.selectedIndex] : null;
+      var examVal = examChoiceEl ? examChoiceEl.value : '';
+      var examTypeVal = selectedOpt ? selectedOpt.getAttribute('data-exam') : (examVal.indexOf('ISE') > -1 ? 'ISE' : examVal);
+
+      submitBtn.disabled = true;
+      statusDiv.className = 'upload-status info';
+      statusDiv.style.display = 'block';
+
+      var finalPdfFile = null;
+
+      // Handle photos -> auto-convert to PDF
+      if (selectedFileType === 'images') {
+        submitBtn.textContent = 'Processing photos...';
+        statusDiv.textContent = 'Optimizing and stitching ' + selectedUploadFiles.length + ' page(s) into PDF...';
+
+        try {
+          finalPdfFile = await convertImagesToPdf(selectedUploadFiles, function (cur, total) {
+            statusDiv.textContent = 'Optimizing page ' + cur + ' of ' + total + '...';
+          });
+        } catch (convErr) {
+          statusDiv.className = 'upload-status error';
+          statusDiv.textContent = '❌ Failed to process images: ' + convErr.message;
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Upload & Submit for Review';
+          return;
+        }
+      } else {
+        finalPdfFile = selectedUploadFiles[0];
+      }
+
+      // Check if large file (> 4.2 MB) -> bypass Vercel serverless limit with direct upload to Supabase
+      if (finalPdfFile.size > 4.2 * 1024 * 1024) {
+        submitBtn.textContent = 'Uploading large file...';
+        statusDiv.textContent = 'Directly uploading ' + (finalPdfFile.size / 1024 / 1024).toFixed(1) + ' MB file to storage...';
+
+        try {
+          var cfgRes = await fetch('/api/upload?action=config');
+          var cfg = await cfgRes.json();
+          if (!cfg.anonKey || !cfg.projectId) {
+            throw new Error('Could not retrieve direct upload credentials.');
+          }
+
+          var fileBuffer = await finalPdfFile.arrayBuffer();
+          var hashBuf = await crypto.subtle.digest('SHA-256', fileBuffer);
+          var fileHash = Array.from(new Uint8Array(hashBuf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+
+          var groupId = document.getElementById('upGroup').value;
+          var subSelect = document.getElementById('upSubject');
+          var subjectId = subSelect.value;
+          var storagePath = 'pending/' + groupId + '/' + subjectId + '/' + Date.now() + '_' + fileHash.substring(0, 8) + '.pdf';
+
+          var uploadUrl = 'https://' + cfg.projectId + '.supabase.co/storage/v1/object/' + cfg.bucket + '/' + storagePath;
+          var putRes = await fetch(uploadUrl, {
+            method: 'POST',
+            headers: {
+              'apikey': cfg.anonKey,
+              'Authorization': 'Bearer ' + cfg.anonKey,
+              'Content-Type': 'application/pdf'
+            },
+            body: fileBuffer
+          });
+
+          if (!putRes.ok) {
+            var putErr = await putRes.text();
+            throw new Error('Direct storage upload failed: ' + putErr);
+          }
+
+          var directPayload = {
+            direct_upload: true,
+            group_id: groupId,
+            subject_id: subjectId,
+            subject_name: subSelect && subSelect.selectedIndex > -1 ? subSelect.options[subSelect.selectedIndex].text : '',
+            exam_choice: examVal,
+            exam_type: examTypeVal,
+            semester: form.elements['semester'].value,
+            year: form.elements['year'].value,
+            title: examVal,
+            contributor_name: form.elements['contributor_name'] ? form.elements['contributor_name'].value.trim() : 'Anonymous',
+            file_path: storagePath,
+            file_size: finalPdfFile.size,
+            file_hash: fileHash
+          };
+
+          var dbRes = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(directPayload)
+          });
+          var dbData = await dbRes.json();
+          if (!dbRes.ok) {
+            throw new Error(dbData.error || 'Failed to save submission record.');
+          }
+
+          form.style.display = 'none';
+          var successScreen = document.getElementById('uploadSuccess');
+          if (successScreen) successScreen.style.display = 'flex';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Upload & Submit for Review';
+          selectedUploadFiles = [];
+          selectedFileType = null;
+          renderFilePreviews();
+          return;
+
+        } catch (largeErr) {
+          statusDiv.className = 'upload-status error';
+          statusDiv.textContent = '❌ Large file upload failed: ' + largeErr.message;
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Upload & Submit for Review';
+          return;
+        }
+      }
+
+      // Normal sized file (<= 4.2 MB)
+      submitBtn.textContent = 'Uploading paper...';
+      statusDiv.textContent = 'Uploading PDF... please wait a moment.';
+
       var formData = new FormData(form);
       var subSelect = document.getElementById('upSubject');
       var subjectName = subSelect && subSelect.selectedIndex > -1 ? subSelect.options[subSelect.selectedIndex].text : '';
       formData.append('subject_name', subjectName);
-
-      // Auto-set title and exam_type from exam selection
-      var examChoiceEl = document.getElementById('upExamChoice');
-      if (examChoiceEl) {
-        var selectedOpt = examChoiceEl.options[examChoiceEl.selectedIndex];
-        var examVal = examChoiceEl.value;
-        var examTypeVal = selectedOpt ? selectedOpt.getAttribute('data-exam') : (examVal.indexOf('ISE') > -1 ? 'ISE' : examVal);
-        formData.set('title', examVal);
-        formData.set('exam_type', examTypeVal);
-      }
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Uploading paper...';
-      statusDiv.className = 'upload-status info';
-      statusDiv.textContent = 'Uploading PDF... please wait a moment.';
-      statusDiv.style.display = 'block';
+      formData.set('title', examVal);
+      formData.set('exam_type', examTypeVal);
+      formData.set('file', finalPdfFile, 'question-paper.pdf');
 
       try {
         var res = await fetch('/api/upload', {
@@ -1277,11 +1596,8 @@ function closeUploadModal() {
         });
         var rawText = await res.text();
         var data;
-        try {
-          data = JSON.parse(rawText);
-        } catch (jsonErr) {
-          throw new Error(rawText.substring(0, 200) || ('HTTP ' + res.status));
-        }
+        try { data = JSON.parse(rawText); }
+        catch (jsonErr) { throw new Error(rawText.substring(0, 200) || ('HTTP ' + res.status)); }
 
         if (!res.ok) {
           statusDiv.className = 'upload-status error';
@@ -1291,14 +1607,14 @@ function closeUploadModal() {
           return;
         }
 
-        // Show animated success tick mark and message
         form.style.display = 'none';
         var successScreen = document.getElementById('uploadSuccess');
-        if (successScreen) {
-          successScreen.style.display = 'flex';
-        }
+        if (successScreen) successScreen.style.display = 'flex';
         submitBtn.disabled = false;
         submitBtn.textContent = 'Upload & Submit for Review';
+        selectedUploadFiles = [];
+        selectedFileType = null;
+        renderFilePreviews();
 
       } catch (err) {
         statusDiv.className = 'upload-status error';
