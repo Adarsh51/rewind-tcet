@@ -622,7 +622,12 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
         <div class="form-row">
           <div class="form-group">
             <label>Year</label>
-            <input type="text" name="year" placeholder="e.g. 2025-26" required />
+            <select name="year" required>
+              <option value="">Select year</option>
+              <option value="2024-25">2024-25</option>
+              <option value="2025-26">2025-26</option>
+              <option value="2026-27" selected>2026-27</option>
+            </select>
           </div>
           <div class="form-group">
             <label>Paper Title</label>
@@ -702,41 +707,71 @@ var SITE = {
     { id: "1", name: "Group I", subjects: [
       { id: "phy", name: "Engineering Physics", papers: [
         { title: "ISE I", year: "2024-25", exam: "ISE", sem: "odd", file: "pyqs/group1/phy/phy-ise1.pdf" },
-        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true } ] },
+        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE I", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE II", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ESE", year: "2026-27", exam: "ESE", sem: "odd", soon: true } ] },
       { id: "maths", name: "Engineering Mathematics", papers: [
         { title: "ISE I", year: "2024-25", exam: "ISE", sem: "odd", file: "pyqs/group1/maths/maths-ise1.pdf" },
-        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true } ] },
+        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE I", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE II", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ESE", year: "2026-27", exam: "ESE", sem: "odd", soon: true } ] },
       { id: "bee", name: "Basic Electrical Engineering", papers: [
         { title: "ISE I", year: "2024-25", exam: "ISE", sem: "odd", file: "pyqs/group1/bee/bee-ise1.pdf" },
-        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true } ] },
+        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE I", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE II", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ESE", year: "2026-27", exam: "ESE", sem: "odd", soon: true } ] },
       { id: "egd", name: "Engineering Graphics & Design", papers: [
         { title: "ISE I", year: "2024-25", exam: "ISE", sem: "odd", file: "pyqs/group1/egd/egd-ise1.pdf" },
-        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true } ] },
+        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE I", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE II", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ESE", year: "2026-27", exam: "ESE", sem: "odd", soon: true } ] },
       { id: "eng", name: "English for General & Professional Communication", papers: [
         { title: "ISE I", year: "2024-25", exam: "ISE", sem: "odd", file: "pyqs/group1/eng/eng-ise1.pdf" },
-        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true } ] }
+        { title: "ISE II", year: "2024-25", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE I", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE II", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ESE", year: "2026-27", exam: "ESE", sem: "odd", soon: true } ] }
     ] },
     { id: "2", name: "Group II", subjects: [
       { id: "chem", name: "Engineering Chemistry", papers: [
         { title: "ISE I", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/chem/chem-ise1.pdf" },
         { title: "ISE II", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/chem/chem-ise2.pdf" },
-        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true } ] },
+        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true },
+        { title: "ISE I", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE II", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ESE", year: "2026-27", exam: "ESE", sem: "odd", soon: true } ] },
       { id: "pps", name: "Programming for Problem Solving", papers: [
         { title: "ISE I", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/pps/pps-ise1.pdf" },
         { title: "ISE II", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/pps/pps-ise2.pdf" },
-        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true } ] },
+        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true },
+        { title: "ISE I", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE II", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ESE", year: "2026-27", exam: "ESE", sem: "odd", soon: true } ] },
       { id: "maths", name: "Engineering Mathematics", papers: [
         { title: "ISE I", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/maths/maths-ise1.pdf" },
         { title: "ISE II", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/maths/maths-ise2.pdf" },
-        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true } ] },
+        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true },
+        { title: "ISE I", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE II", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ESE", year: "2026-27", exam: "ESE", sem: "odd", soon: true } ] },
       { id: "em", name: "Engineering Mechanics", papers: [
         { title: "ISE I", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/em/em-ise1.pdf" },
         { title: "ISE II", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/em/em-ise2.pdf" },
-        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true } ] },
+        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true },
+        { title: "ISE I", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE II", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ESE", year: "2026-27", exam: "ESE", sem: "odd", soon: true } ] },
       { id: "iks", name: "Introduction to Indian Knowledge System", papers: [
         { title: "ISE I", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/iks/iks-ise1.pdf" },
         { title: "ISE II", year: "2025-26", exam: "ISE", sem: "odd", file: "pyqs/group2/iks/iks-ise2.pdf" },
-        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true } ] }
+        { title: "ESE", year: "2025-26", exam: "ESE", sem: "odd", soon: true },
+        { title: "ISE I", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ISE II", year: "2026-27", exam: "ISE", sem: "odd", soon: true },
+        { title: "ESE", year: "2026-27", exam: "ESE", sem: "odd", soon: true } ] }
     ] }
   ]
 };
@@ -1116,16 +1151,25 @@ function fetchApprovedPapers() {
       if (!data.papers || !data.papers.length) return;
       var changed = false;
       data.papers.forEach(function (p) {
-        var g = groupById(p.group_id);
-        if (!g) return;
-        var s = subjectById(g, p.subject_id);
-        if (!s) return;
+        var g = groupById(String(p.group_id));
+        if (!g) { console.warn('[Rewind] Unknown group_id:', p.group_id); return; }
+        var s = subjectById(g, String(p.subject_id));
+        if (!s) { console.warn('[Rewind] Unknown subject_id:', p.subject_id, 'in group', p.group_id); return; }
         s.papers = s.papers || [];
+        // Check if this exact paper already exists
         var exists = s.papers.some(function (item) {
-          return item.id === p.id || (item.title === p.title && item.year === p.year && item.exam === p.exam_type);
+          return item.id === p.id || (item.file && item.file === p.url);
         });
         if (!exists) {
-          s.papers.push({
+          // Replace a matching "coming soon" placeholder if one exists
+          var placeholderIdx = -1;
+          for (var i = 0; i < s.papers.length; i++) {
+            if (s.papers[i].soon && s.papers[i].title === p.title && s.papers[i].year === p.year && (s.papers[i].exam || '').toUpperCase() === (p.exam_type || '').toUpperCase()) {
+              placeholderIdx = i;
+              break;
+            }
+          }
+          var newPaper = {
             id: p.id,
             title: p.title,
             year: p.year,
@@ -1133,7 +1177,12 @@ function fetchApprovedPapers() {
             sem: p.semester,
             file: p.url,
             contributor: p.contributor_name
-          });
+          };
+          if (placeholderIdx > -1) {
+            s.papers[placeholderIdx] = newPaper;
+          } else {
+            s.papers.push(newPaper);
+          }
           changed = true;
         }
       });
