@@ -179,6 +179,62 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
 .card h3 { margin: 4px 0 0; font-size: 1.1rem; line-height: 1.25; }
 .card-meta { margin: 0; font-size: .88rem; color: var(--muted); }
 /* ---- papers ---- */
+.year-tabs-wrap {
+  margin: 0 0 24px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.year-tabs-wrap::-webkit-scrollbar { display: none; }
+.year-tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 2px;
+}
+.year-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgba(20, 26, 46, .04);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .16s ease;
+}
+.year-tab:hover {
+  color: var(--text);
+  border-color: var(--ring);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+.year-tab.active {
+  color: #ffffff;
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  border-color: transparent;
+  box-shadow: 0 4px 14px var(--ring);
+  transform: translateY(-1px);
+}
+.year-tab-badge {
+  font-size: .75rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  transition: all .16s ease;
+}
+.year-tab.active .year-tab-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
 .sem-block { margin-bottom: 34px; }
 .sem-head {
   font-size: 1rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
@@ -867,7 +923,7 @@ function renderSubjects(g) {
 
 function paperCard(p, gId, sId) {
   var action = p.soon
-    ? '<button class="soon" type="button" onclick="openUploadModal(\'' + esc(gId || '') + '\', \'' + esc(sId || '') + '\', \'' + esc(p.exam || '') + '\')">Upload this &rarr;</button>'
+    ? '<button class="soon" type="button" onclick="openUploadModal(\'' + esc(gId || '') + '\', \'' + esc(sId || '') + '\', \'' + esc(p.exam || '') + '\', \'' + esc(p.year || '') + '\')">Upload this &rarr;</button>'
     : '<a class="dl" href="' + esc(p.file) + '" download target="_blank" rel="noopener">Download <span class="dl-ic" aria-hidden="true">&darr;</span></a>';
   var credit = (p.contributor && p.contributor !== 'Anonymous')
     ? '<p class="paper-contributor">Contributed by ' + esc(p.contributor) + '</p>'
@@ -881,25 +937,88 @@ function paperCard(p, gId, sId) {
     action + '</div>';
 }
 
-function renderSubject(g, s) {
+function renderSubject(g, s, initialYear) {
   document.title = 'Rewind · ' + g.name + ' · ' + s.name;
+  var papers = s.papers || [];
+
+  // Gather unique academic years and sort descending (newest first)
+  var availableYears = [];
+  papers.forEach(function (p) {
+    if (p.year && availableYears.indexOf(p.year) === -1) {
+      availableYears.push(p.year);
+    }
+  });
+  availableYears.sort().reverse();
+  if (!availableYears.length) {
+    availableYears = ['2026-27', '2025-26'];
+  }
+
+  // Active year: URL param > first available year
+  var activeYear = (initialYear && (availableYears.indexOf(initialYear) > -1 || initialYear === 'all'))
+    ? initialYear
+    : availableYears[0];
+
+  // Build year tabs HTML
+  var tabsHtml = '<div class="year-tabs-wrap"><div class="year-tabs" id="yearTabs" role="tablist">';
+  availableYears.forEach(function (yr) {
+    var count = papers.filter(function (p) { return p.year === yr; }).length;
+    var isActive = activeYear === yr;
+    tabsHtml += '<button class="year-tab' + (isActive ? ' active' : '') + '" data-year="' + esc(yr) + '" type="button" role="tab" aria-selected="' + (isActive ? 'true' : 'false') + '">' +
+      '<span>' + esc(yr) + '</span>' +
+      '<span class="year-tab-badge">' + count + '</span>' +
+      '</button>';
+  });
+  var isAllActive = activeYear === 'all';
+  tabsHtml += '<button class="year-tab' + (isAllActive ? ' active' : '') + '" data-year="all" type="button" role="tab" aria-selected="' + (isAllActive ? 'true' : 'false') + '">' +
+    '<span>All Years</span>' +
+    '<span class="year-tab-badge">' + papers.length + '</span>' +
+    '</button>';
+  tabsHtml += '</div></div>';
+
   view.innerHTML = '<nav class="crumbs"><a href="#">Home</a><span>/</span>' +
     '<a href="#g=' + g.id + '">' + esc(g.name) + '</a><span>/</span><strong>' + esc(s.name) + '</strong></nav>' +
-    pageHead(s.name, 'Search papers…');
+    '<section class="page-head"><h1>' + esc(s.name) + '</h1>' +
+    '<div class="search-wrap"><input id="search" class="search" type="search" placeholder="Search papers…"/></div></section>' +
+    tabsHtml +
+    '<section id="content"></section>';
+
   var content = document.getElementById('content');
-  var papers = s.papers || [];
+
   function draw(q) {
     if (!papers.length) {
       content.innerHTML = '<div class="empty"><p>No papers uploaded for this subject yet.</p>' +
         '<p class="muted">Have question papers for ' + esc(s.name) + '?</p>' +
-        '<button class="contribute-btn" type="button" onclick="openUploadModal(\'' + esc(g.id) + '\', \'' + esc(s.id) + '\')">Upload for ' + esc(s.name) + ' 📄</button></div>';
+        '<button class="contribute-btn" type="button" onclick="openUploadModal(\'' + esc(g.id) + '\', \'' + esc(s.id) + '\', \'\', \'' + esc(activeYear === 'all' ? '' : activeYear) + '\')">Upload for ' + esc(s.name) + ' 📄</button></div>';
       return;
     }
+
+    var yearFiltered = papers.filter(function (p) {
+      if (activeYear === 'all') return true;
+      return p.year === activeYear;
+    });
+
+    if (!yearFiltered.length) {
+      content.innerHTML = '<div class="empty">' +
+        '<p>No question papers uploaded for <strong>' + esc(activeYear) + '</strong> yet.</p>' +
+        '<p class="muted">Have question papers for ' + esc(s.name) + ' (' + esc(activeYear) + ')?</p>' +
+        '<button class="contribute-btn" type="button" onclick="openUploadModal(\'' + esc(g.id) + '\', \'' + esc(s.id) + '\', \'\', \'' + esc(activeYear) + '\')">Upload ' + esc(activeYear) + ' Paper 📄</button>' +
+        '</div>';
+      return;
+    }
+
     var n = (q || '').trim().toLowerCase();
-    var list = papers.filter(function (p) {
+    var list = yearFiltered.filter(function (p) {
       return !n || (p.title || '').toLowerCase().indexOf(n) > -1 || String(p.year || '').indexOf(n) > -1 || (p.exam || '').toLowerCase().indexOf(n) > -1;
     });
-    if (!list.length) { content.innerHTML = '<p class="empty">No papers match &ldquo;' + esc(q) + '&rdquo;.</p>'; return; }
+
+    if (!list.length) {
+      var searchPrompt = activeYear !== 'all'
+        ? '<br/><button class="contribute-btn" style="margin-top:14px" type="button" onclick="window.switchSubjectYear(\'all\')">Search across all years &rarr;</button>'
+        : '';
+      content.innerHTML = '<div class="empty"><p>No papers in ' + (activeYear === 'all' ? 'this subject' : esc(activeYear)) + ' match &ldquo;' + esc(q) + '&rdquo;.' + searchPrompt + '</p></div>';
+      return;
+    }
+
     function block(label, items) {
       return items.length ? '<div class="sem-block"><h2 class="sem-head">' + label + '</h2><div class="papers">' + items.map(function(item) { return paperCard(item, g.id, s.id); }).join('') + '</div></div>' : '';
     }
@@ -908,6 +1027,32 @@ function renderSubject(g, s) {
     var other = list.filter(function (p) { return ['odd', 'even'].indexOf((p.sem || '').toLowerCase()) === -1; });
     content.innerHTML = block('Odd Semester', odd) + block('Even Semester', even) + block('Papers', other);
   }
+
+  window.switchSubjectYear = function (targetYear) {
+    activeYear = targetYear;
+    var allTabs = document.querySelectorAll('#yearTabs .year-tab');
+    allTabs.forEach(function (tab) {
+      var isCur = tab.getAttribute('data-year') === targetYear;
+      tab.classList.toggle('active', isCur);
+      tab.setAttribute('aria-selected', isCur ? 'true' : 'false');
+    });
+    var curP = new URLSearchParams(location.hash.replace(/^#/, ''));
+    curP.set('y', targetYear);
+    history.replaceState(null, '', '#' + curP.toString());
+    var searchEl = document.getElementById('search');
+    draw(searchEl ? searchEl.value : '');
+  };
+
+  var tabsContainer = document.getElementById('yearTabs');
+  if (tabsContainer) {
+    tabsContainer.addEventListener('click', function (e) {
+      var btn = e.target.closest('.year-tab');
+      if (btn && btn.getAttribute('data-year')) {
+        window.switchSubjectYear(btn.getAttribute('data-year'));
+      }
+    });
+  }
+
   draw('');
   document.getElementById('search').addEventListener('input', function (e) { draw(e.target.value); });
 }
@@ -918,7 +1063,8 @@ function render() {
   var g = p.get('g') ? groupById(p.get('g')) : null;
   if (!g) { renderHome(); initLikeBtn(); window.scrollTo(0, 0); return; }
   var s = p.get('s') ? subjectById(g, p.get('s')) : null;
-  if (s) renderSubject(g, s); else renderSubjects(g);
+  var y = p.get('y') || '';
+  if (s) renderSubject(g, s, y); else renderSubjects(g);
   window.scrollTo(0, 0);
 }
 window.addEventListener('hashchange', render);
@@ -980,7 +1126,7 @@ function populateSubjects(groupId, selectedSubjectId) {
   });
 }
 
-function openUploadModal(groupId, subjectId, examType) {
+function openUploadModal(groupId, subjectId, examType, year) {
   var modal = document.getElementById('uploadModal');
   var form = document.getElementById('uploadForm');
   var successScreen = document.getElementById('uploadSuccess');
@@ -1003,6 +1149,9 @@ function openUploadModal(groupId, subjectId, examType) {
   }
   if (examType && form.elements['exam_type']) {
     form.elements['exam_type'].value = examType;
+  }
+  if (year && form.elements['year']) {
+    form.elements['year'].value = year;
   }
 
   modal.classList.add('active');
