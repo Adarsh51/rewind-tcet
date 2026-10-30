@@ -985,7 +985,7 @@ function paperCard(p, gId, sId, subName) {
   var action = p.soon
     ? '<button class="soon" type="button" onclick="openUploadModal(\'' + esc(gId || '') + '\', \'' + esc(sId || '') + '\', \'' + esc(p.exam || '') + '\', \'' + esc(p.year || '') + '\', \'' + esc(p.title || '') + '\')">Upload this &rarr;</button>'
     : '<div class="paper-actions">' +
-        '<button class="paper-wa-btn" type="button" title="Share this paper on WhatsApp" aria-label="Share on WhatsApp" onclick="sharePaperWhatsApp(\'' + esc(subName || '') + '\', \'' + esc(p.title || 'Question Paper') + '\', \'' + esc(p.year || '') + '\', \'' + esc(p.exam || 'PYQ') + '\', \'' + esc(gId || '') + '\', \'' + esc(sId || '') + '\')">' +
+        '<button class="paper-wa-btn" type="button" title="Share PDF on WhatsApp" aria-label="Share on WhatsApp" onclick="sharePaperWhatsApp(this, \'' + esc(subName || '') + '\', \'' + esc(p.title || 'Question Paper') + '\', \'' + esc(p.year || '') + '\', \'' + esc(p.exam || 'PYQ') + '\', \'' + esc(gId || '') + '\', \'' + esc(sId || '') + '\', \'' + esc(p.file || '') + '\')">' +
           waSvg +
         '</button>' +
         '<a class="dl" href="' + esc(p.file) + '" download target="_blank" rel="noopener">Download <span class="dl-ic" aria-hidden="true">&darr;</span></a>' +
@@ -1130,13 +1130,57 @@ function getSiteBaseUrl() {
   return 'https://rewindxtcet.vercel.app';
 }
 
-function sharePaperWhatsApp(subName, title, year, exam, gId, sId) {
+async function sharePaperWhatsApp(btn, subName, title, year, exam, gId, sId, fileUrl) {
   var base = getSiteBaseUrl();
-  var link = base + (gId && sId ? '/#g=' + encodeURIComponent(gId) + '&s=' + encodeURIComponent(sId) + (year ? '&y=' + encodeURIComponent(year) : '') : '');
-  var label = subName ? subName + ' · ' + (exam || title) : (exam ? exam + ' ' + title : title);
-  if (year) label += ' (' + year + ')';
-  var msg = '📝 *TCET ' + label + '* question paper is on Rewind:\n' + link;
-  window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
+  var siteDomain = 'rewindxtcet.vercel.app';
+  var siteUrl = 'https://' + siteDomain;
+  var link = siteUrl + (gId && sId ? '/#g=' + encodeURIComponent(gId) + '&s=' + encodeURIComponent(sId) + (year ? '&y=' + encodeURIComponent(year) : '') : '');
+
+  // Note: "i got this particular subject ise1 paper on rewindxtcet.vercel.app"
+  var examLabel = title || exam || 'paper';
+  var paperDesc = (subName ? subName + ' ' : '') + examLabel;
+  var note = 'I got this ' + paperDesc + (year ? ' (' + year + ')' : '') + ' paper on ' + siteDomain;
+  var fullShareText = note + '\n' + link;
+
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+  }
+
+  try {
+    // If the browser supports native Web Share API with files (Android Chrome, iOS Safari)
+    if (fileUrl && navigator.share) {
+      try {
+        var resolvedUrl = fileUrl.indexOf('http') === 0 ? fileUrl : (base + '/' + fileUrl.replace(/^\//, ''));
+        var response = await fetch(resolvedUrl);
+        if (response.ok) {
+          var blob = await response.blob();
+          var cleanName = (paperDesc + (year ? '-' + year : '')).replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
+          var file = new File([blob], cleanName + '.pdf', { type: 'application/pdf' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              text: fullShareText
+            });
+            return;
+          }
+        }
+      } catch (shareErr) {
+        if (shareErr.name === 'AbortError') return;
+        console.warn('Web Share with file failed, falling back to link:', shareErr);
+      }
+    }
+
+    // Fallback for Desktop WhatsApp Web or browsers where file sharing is unsupported
+    var directPdf = fileUrl ? (fileUrl.indexOf('http') === 0 ? fileUrl : (base + '/' + fileUrl.replace(/^\//, ''))) : '';
+    var desktopMsg = fullShareText + (directPdf ? '\n\n📄 PDF link: ' + directPdf : '');
+    window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(desktopMsg), '_blank');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+  }
 }
 
 /* ---- router ---- */
