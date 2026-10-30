@@ -1,10 +1,13 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(
-  `https://${process.env.SUPABASE_PROJECT_ID}.supabase.co`,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
-);
-const ADMIN_PASS = process.env.ADMIN_PASSWORD || 'rewind-admin-2026';
+function getSupabase() {
+  const projectId = process.env.SUPABASE_PROJECT_ID || 'bpdyqvdebwaxcyipkftt';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!key) {
+    throw new Error('Supabase credentials not found. Please set SUPABASE_ANON_KEY in Vercel Environment Variables.');
+  }
+  return createClient(`https://${projectId}.supabase.co`, key);
+}
 
 function cors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,7 +16,8 @@ function cors(res) {
 }
 
 function auth(req) {
-  return req.headers['x-admin-key'] === ADMIN_PASS;
+  const adminPass = process.env.ADMIN_PASSWORD || 'rewind2026';
+  return req.headers['x-admin-key'] === adminPass;
 }
 
 module.exports = async function handler(req, res) {
@@ -25,7 +29,9 @@ module.exports = async function handler(req, res) {
   const action = url.searchParams.get('action');
 
   try {
-    // LIST pending submissions
+    const supabase = getSupabase();
+
+    // LIST submissions
     if (req.method === 'GET' && (!action || action === 'list')) {
       const status = url.searchParams.get('status') || 'pending';
       const { data, error } = await supabase
@@ -44,7 +50,6 @@ module.exports = async function handler(req, res) {
       const { id } = body;
       if (!id) return res.status(400).json({ error: 'Missing submission id' });
 
-      // Get submission
       const { data: sub, error: fetchErr } = await supabase
         .from('submissions')
         .select('*')
@@ -53,10 +58,8 @@ module.exports = async function handler(req, res) {
 
       if (fetchErr || !sub) return res.status(404).json({ error: 'Submission not found' });
 
-      // Move file from pending/ to approved/
       const newPath = sub.file_path.replace('pending/', 'approved/');
 
-      // Download the file
       const { data: fileData, error: dlErr } = await supabase.storage
         .from('papers')
         .download(sub.file_path);
@@ -65,16 +68,13 @@ module.exports = async function handler(req, res) {
 
       const buffer = Buffer.from(await fileData.arrayBuffer());
 
-      // Upload to new location
       await supabase.storage.from('papers').upload(newPath, buffer, {
         contentType: 'application/pdf',
         upsert: true
       });
 
-      // Delete old file
       await supabase.storage.from('papers').remove([sub.file_path]);
 
-      // Update record
       const { error: updateErr } = await supabase
         .from('submissions')
         .update({ status: 'approved', file_path: newPath })
@@ -91,7 +91,6 @@ module.exports = async function handler(req, res) {
       const { id, reason } = body;
       if (!id) return res.status(400).json({ error: 'Missing submission id' });
 
-      // Get submission to delete file
       const { data: sub } = await supabase
         .from('submissions')
         .select('file_path')

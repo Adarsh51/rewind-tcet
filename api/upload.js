@@ -3,13 +3,17 @@ const pdfParse = require('pdf-parse');
 const Busboy = require('busboy');
 const crypto = require('crypto');
 
-// ---- config ----
-const supabase = createClient(
-  `https://${process.env.SUPABASE_PROJECT_ID}.supabase.co`,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
-);
-const GEMINI_KEY = process.env.GEMINI_API_KEY;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+// Helper to get Supabase client safely without crashing on boot
+function getSupabase() {
+  const projectId = process.env.SUPABASE_PROJECT_ID || 'bpdyqvdebwaxcyipkftt';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!key) {
+    throw new Error('Supabase credentials not found. Please set SUPABASE_ANON_KEY in Vercel Environment Variables.');
+  }
+  return createClient(`https://${projectId}.supabase.co`, key);
+}
 
 // Subject keywords for validation
 const SUBJECT_KEYWORDS = {
@@ -24,7 +28,6 @@ const SUBJECT_KEYWORDS = {
   iks:   ['indian knowledge', 'vedic', 'yoga', 'ayurveda', 'ancient', 'philosophy', 'dharma', 'sanskrit', 'tradition', 'heritage', 'culture']
 };
 
-// ---- helpers ----
 function cors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -39,7 +42,8 @@ async function extractText(pdfBuffer) {
   try {
     const data = await pdfParse(pdfBuffer);
     return data.text || '';
-  } catch {
+  } catch (err) {
+    console.error('PDF text extraction error:', err.message);
     return '';
   }
 }
@@ -73,8 +77,9 @@ function checkExamStructure(text) {
 }
 
 async function moderateWithGemini(text, subjectName, examType) {
-  if (!GEMINI_KEY || text.length < 20) {
-    return { safe: true, skipped: true, reason: 'No text extracted or GEMINI_API_KEY missing' };
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!geminiKey || text.length < 20) {
+    return { safe: true, skipped: true, reason: !geminiKey ? 'GEMINI_API_KEY not configured' : 'No text extracted' };
   }
 
   const truncated = text.substring(0, 3000);
@@ -96,7 +101,7 @@ ${truncated}
 
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${geminiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -129,49 +134,62 @@ ${truncated}
 
 function parseMultipartBody(req) {
   return new Promise((resolve, reject) => {
-    const busboy = Busboy({
-      headers: req.headers,
-      limits: { fileSize: MAX_FILE_SIZE }
-    });
-
-    const fields = {};
-    let filePart = null;
-
-    busboy.on('field', (fieldname, val) => {
-      fields[fieldname] = val;
-    });
-
-    busboy.on('file', (fieldname, file, info) => {
-      const { filename, mimeType } = info;
-      const chunks = [];
-      file.on('data', chunk => chunks.push(chunk));
-      file.on('end', () => {
-        filePart = {
-          name: fieldname,
-          filename,
-          mimeType,
-          data: Buffer.concat(chunks)
-        };
+    try {
+      const busboy = Busboy({
+        headers: req.headers,
+        limits: { fileSize: MAX_FILE_SIZE }
       });
-    });
 
-    busboy.on('finish', () => {
-      resolve({ fields, filePart });
-    });
+      const fields = {};
+      let filePart = null;
 
-    busboy.on('error', err => reject(err));
+      busboy.on('field', (fieldname, val) => {
+        fields[fieldname] = val;
+      });
 
-    req.pipe(busboy);
+      busboy.on('file', (fieldname, file, info) => {
+        const { filename, mimeType } = info;
+        const chunks = [];
+        file.on('data', chunk => chunks.push(chunk));
+        file.on('end', () => {
+          filePart = {
+            name: fieldname,
+            filename,
+            mimeType,
+            data: Buffer.concat(chunks)
+          };
+        });
+      });
+
+      busboy.on('finish', () => resolve({ fields, filePart }));
+      busboy.on('close', () => resolve({ fields, filePart }));
+      busboy.on('error', err => reject(err));
+
+      if (req.body && Buffer.isBuffer(req.body)) {
+        busboy.end(req.body);
+      } else {
+        req.pipe(busboy);
+      }
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
 // ---- main handler ----
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
+    let supabase;
+    try {
+      supabase = getSupabase();
+    } catch (initErr) {
+      return res.status(500).json({ error: initErr.message });
+    }
+
     const contentType = req.headers['content-type'] || '';
     if (!contentType.includes('multipart/form-data')) {
       return res.status(400).json({ error: 'Expected multipart/form-data' });
@@ -308,4 +326,11 @@ module.exports = async function handler(req, res) {
     console.error('Handler error:', err);
     return res.status(500).json({ error: 'Server error processing file: ' + err.message });
   }
+}
+
+module.exports = handler;
+module.exports.config = {
+  api: {
+    bodyParser: false,
+  },
 };
