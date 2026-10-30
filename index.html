@@ -286,6 +286,15 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
 .paper-wa-btn svg {
   display: block; width: 18px; height: 18px;
 }
+.site-toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(30px);
+  background: rgba(20, 26, 46, 0.94); color: #ffffff; padding: 10px 20px;
+  border-radius: 999px; font-size: .86rem; font-weight: 500;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28); backdrop-filter: blur(8px);
+  z-index: 9999; opacity: 0; pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease; white-space: nowrap;
+}
+.site-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .paper.is-soon { opacity: .7; }
 .soon {
   flex: none; font-size: .82rem; font-weight: 600; color: var(--muted); white-space: nowrap;
@@ -1122,6 +1131,23 @@ function renderSubject(g, s, initialYear) {
   document.getElementById('search').addEventListener('input', function (e) { draw(e.target.value); });
 }
 
+/* ---- toast notification ---- */
+function showToast(msg) {
+  var toast = document.getElementById('siteToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'siteToast';
+    toast.className = 'site-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(function () {
+    toast.classList.remove('show');
+  }, 3500);
+}
+
 /* ---- WhatsApp sharing helpers ---- */
 function getSiteBaseUrl() {
   if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.indexOf('http') === 0) {
@@ -1136,11 +1162,16 @@ async function sharePaperWhatsApp(btn, subName, title, year, exam, gId, sId, fil
   var siteUrl = 'https://' + siteDomain;
   var link = siteUrl + (gId && sId ? '/#g=' + encodeURIComponent(gId) + '&s=' + encodeURIComponent(sId) + (year ? '&y=' + encodeURIComponent(year) : '') : '');
 
-  // Note: "i got this particular subject ise1 paper on rewindxtcet.vercel.app"
+  // Exact note format: "i got this particular subject ise1 paper on rewindxtcet.vercel.app"
   var examLabel = title || exam || 'paper';
   var paperDesc = (subName ? subName + ' ' : '') + examLabel;
   var note = 'I got this ' + paperDesc + (year ? ' (' + year + ')' : '') + ' paper on ' + siteDomain;
   var fullShareText = note + '\n' + link;
+
+  // Auto-copy the caption to clipboard immediately so the user can easily paste it into WhatsApp's caption box if the OS drops EXTRA_TEXT
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try { await navigator.clipboard.writeText(fullShareText); } catch (e) {}
+  }
 
   if (btn) {
     btn.disabled = true;
@@ -1158,10 +1189,22 @@ async function sharePaperWhatsApp(btn, subName, title, year, exam, gId, sId, fil
           var cleanName = (paperDesc + (year ? '-' + year : '')).replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
           var file = new File([blob], cleanName + '.pdf', { type: 'application/pdf' });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
+            showToast('PDF ready! Caption copied to clipboard 📋');
+            var shareData = {
               files: [file],
-              text: fullShareText
-            });
+              title: note,
+              text: fullShareText,
+              url: link
+            };
+            if (navigator.canShare(shareData)) {
+              await navigator.share(shareData);
+            } else {
+              await navigator.share({
+                files: [file],
+                title: note,
+                text: fullShareText
+              });
+            }
             return;
           }
         }
