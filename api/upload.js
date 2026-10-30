@@ -98,7 +98,6 @@ async function handler(req, res) {
       if (!examType) {
         if (examChoice.startsWith('ISE')) examType = 'ISE';
         else if (examChoice.startsWith('ESE')) examType = 'ESE';
-        else if (examChoice.startsWith('MSE')) examType = 'MSE';
         else examType = 'PYQ';
       }
     }
@@ -106,7 +105,6 @@ async function handler(req, res) {
     if (!examType && title) {
       if (title.startsWith('ISE')) examType = 'ISE';
       else if (title.startsWith('ESE')) examType = 'ESE';
-      else if (title.startsWith('MSE')) examType = 'MSE';
       else examType = 'PYQ';
     }
 

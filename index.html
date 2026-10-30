@@ -664,7 +664,6 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
               <option value="ISE I" data-exam="ISE">ISE 1 (In-Sem Exam I)</option>
               <option value="ISE II" data-exam="ISE">ISE 2 (In-Sem Exam II)</option>
               <option value="ESE" data-exam="ESE">ESE (End-Sem Exam)</option>
-              <option value="MSE" data-exam="MSE">MSE (Mid-Sem Exam)</option>
             </select>
           </div>
           <div class="form-group">
@@ -1154,8 +1153,6 @@ function openUploadModal(groupId, subjectId, examType, year, examTitle) {
       examChoiceEl.value = 'ISE II';
     } else if (target === 'ESE') {
       examChoiceEl.value = 'ESE';
-    } else if (target === 'MSE') {
-      examChoiceEl.value = 'MSE';
     } else if (target === 'ISE') {
       examChoiceEl.value = 'ISE I';
     }
