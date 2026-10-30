@@ -558,6 +558,7 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
 [data-theme="dark"] .upload-status.success { background: #11321f; color: #74d79a; }
 [data-theme="dark"] .upload-status.error { background: #3b1111; color: #fca5a5; }
 [data-theme="dark"] .upload-status.warning { background: #3a2a12; color: #f0b45e; }
+[data-theme="dark"] #allCompleteNotice { background: #11321f; color: #74d79a; }
 /* ---- animated success checkmark ---- */
 .success-screen {
   display: none;
@@ -682,6 +683,7 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
         <button class="modal-close" id="closeModal" aria-label="Close">✕</button>
       </div>
       <form id="uploadForm" autocomplete="off">
+        <div id="allCompleteNotice" style="display:none; padding:12px 14px; background:#d9f3e2; color:#15803d; border-radius:10px; font-size:.85rem; font-weight:500; margin-bottom:14px; text-align:center;"></div>
         <div class="form-row">
           <div class="form-group">
             <label>Group</label>
@@ -1165,6 +1167,85 @@ function populateSubjects(groupId, selectedSubjectId) {
   });
 }
 
+function updateAvailableExams(desiredExam) {
+  var groupEl = document.getElementById('upGroup');
+  var subSelect = document.getElementById('upSubject');
+  var yearSelect = document.querySelector('#uploadForm select[name="year"]');
+  var examSelect = document.getElementById('upExamChoice');
+  var allCompleteNotice = document.getElementById('allCompleteNotice');
+  var submitBtn = document.getElementById('submitBtn');
+
+  if (!examSelect) return;
+
+  var groupVal = groupEl ? groupEl.value : '';
+  var subVal = subSelect ? subSelect.value : '';
+  var yearVal = yearSelect ? yearSelect.value : '';
+
+  var existingPublished = [];
+  if (groupVal && subVal && yearVal) {
+    var g = groupById(groupVal);
+    if (g) {
+      var s = subjectById(g, subVal);
+      if (s && s.papers) {
+        s.papers.forEach(function (p) {
+          if (p.year === yearVal && p.file && !p.soon) {
+            var norm = String(p.title || '').trim().toUpperCase()
+              .replace(/\b1\b/, 'I')
+              .replace(/\b2\b/, 'II');
+            existingPublished.push(norm);
+          }
+        });
+      }
+    }
+  }
+
+  var exams = [
+    { value: 'ISE I', exam: 'ISE', label: 'ISE 1 (In-Sem Exam I)', norm: 'ISE I' },
+    { value: 'ISE II', exam: 'ISE', label: 'ISE 2 (In-Sem Exam II)', norm: 'ISE II' },
+    { value: 'ESE', exam: 'ESE', label: 'ESE (End-Sem Exam)', norm: 'ESE' }
+  ];
+
+  var targetExam = desiredExam || examSelect.value;
+  var availableCount = 0;
+
+  examSelect.innerHTML = '<option value="">Select exam</option>';
+  exams.forEach(function (e) {
+    var isPublished = existingPublished.indexOf(e.norm) > -1;
+    var opt = document.createElement('option');
+    opt.value = e.value;
+    opt.setAttribute('data-exam', e.exam);
+
+    if (isPublished) {
+      opt.textContent = e.label + ' — Already on site ✅';
+      opt.disabled = true;
+      opt.style.color = '#8892b0';
+    } else {
+      opt.textContent = e.label;
+      availableCount++;
+      if (targetExam === e.value) {
+        opt.selected = true;
+      }
+    }
+    examSelect.appendChild(opt);
+  });
+
+  if (examSelect.selectedIndex > -1 && examSelect.options[examSelect.selectedIndex].disabled) {
+    examSelect.value = '';
+  }
+
+  if (allCompleteNotice) {
+    if (groupVal && subVal && yearVal && availableCount === 0) {
+      var subName = subSelect && subSelect.selectedIndex > -1 ? subSelect.options[subSelect.selectedIndex].text : 'this subject';
+      allCompleteNotice.innerHTML = '🎉 <strong>All question papers</strong> (ISE 1, ISE 2, ESE) for <strong>' + esc(subName) + ' (' + esc(yearVal) + ')</strong> are already contributed and published on Rewind! Thank you!';
+      allCompleteNotice.style.display = 'block';
+      if (submitBtn) submitBtn.disabled = true;
+    } else {
+      allCompleteNotice.style.display = 'none';
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  }
+}
+
 function openUploadModal(groupId, subjectId, examType, year, examTitle) {
   var modal = document.getElementById('uploadModal');
   var form = document.getElementById('uploadForm');
@@ -1187,23 +1268,21 @@ function openUploadModal(groupId, subjectId, examType, year, examTitle) {
     populateSubjects(groupId, subjectId);
   }
 
-  var examChoiceEl = document.getElementById('upExamChoice');
-  if (examChoiceEl) {
-    var target = (examTitle || examType || '').toUpperCase().trim();
-    if (target === 'ISE I' || target === 'ISE 1' || target === 'ISE-1') {
-      examChoiceEl.value = 'ISE I';
-    } else if (target === 'ISE II' || target === 'ISE 2' || target === 'ISE-2') {
-      examChoiceEl.value = 'ISE II';
-    } else if (target === 'ESE') {
-      examChoiceEl.value = 'ESE';
-    } else if (target === 'ISE') {
-      examChoiceEl.value = 'ISE I';
-    }
-  }
-
   if (year && form.elements['year']) {
     form.elements['year'].value = year;
   }
+
+  var target = (examTitle || examType || '').toUpperCase().trim();
+  var desired = '';
+  if (target === 'ISE I' || target === 'ISE 1' || target === 'ISE-1' || target === 'ISE') {
+    desired = 'ISE I';
+  } else if (target === 'ISE II' || target === 'ISE 2' || target === 'ISE-2') {
+    desired = 'ISE II';
+  } else if (target === 'ESE') {
+    desired = 'ESE';
+  }
+
+  updateAvailableExams(desired);
 
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
@@ -1426,6 +1505,21 @@ async function convertImagesToPdf(imageFiles, onProgress) {
   if (groupSelect) {
     groupSelect.addEventListener('change', function () {
       populateSubjects(this.value);
+      updateAvailableExams();
+    });
+  }
+
+  var subSelectEl = document.getElementById('upSubject');
+  if (subSelectEl) {
+    subSelectEl.addEventListener('change', function () {
+      updateAvailableExams();
+    });
+  }
+
+  var yearSelectEl = document.querySelector('#uploadForm select[name="year"]');
+  if (yearSelectEl) {
+    yearSelectEl.addEventListener('change', function () {
+      updateAvailableExams();
     });
   }
 
@@ -1468,6 +1562,32 @@ async function convertImagesToPdf(imageFiles, onProgress) {
       var selectedOpt = examChoiceEl ? examChoiceEl.options[examChoiceEl.selectedIndex] : null;
       var examVal = examChoiceEl ? examChoiceEl.value : '';
       var examTypeVal = selectedOpt ? selectedOpt.getAttribute('data-exam') : (examVal.indexOf('ISE') > -1 ? 'ISE' : examVal);
+
+      if (selectedOpt && selectedOpt.disabled) {
+        alert('This question paper is already published on Rewind! Please choose another exam.');
+        return;
+      }
+
+      var groupVal = document.getElementById('upGroup').value;
+      var subVal = document.getElementById('upSubject').value;
+      var yearVal = form.elements['year'].value;
+      var gObj = groupById(groupVal);
+      if (gObj) {
+        var sObj = subjectById(gObj, subVal);
+        if (sObj && sObj.papers) {
+          var normChosen = String(examVal || '').trim().toUpperCase()
+            .replace(/\b1\b/, 'I').replace(/\b2\b/, 'II');
+          var alreadyThere = sObj.papers.some(function (p) {
+            var normP = String(p.title || '').trim().toUpperCase()
+              .replace(/\b1\b/, 'I').replace(/\b2\b/, 'II');
+            return p.year === yearVal && normP === normChosen && p.file && !p.soon;
+          });
+          if (alreadyThere) {
+            alert('This question paper is already published on Rewind! Thank you for checking.');
+            return;
+          }
+        }
+      }
 
       submitBtn.disabled = true;
       statusDiv.className = 'upload-status info';

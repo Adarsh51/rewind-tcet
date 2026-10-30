@@ -136,6 +136,23 @@ async function handler(req, res) {
         return res.status(409).json({ error: 'This exact question paper has already been submitted!' });
       }
 
+      // Check if this exam is already approved and published
+      const { data: alreadyApproved } = await supabase
+        .from('submissions')
+        .select('id')
+        .eq('group_id', groupId)
+        .eq('subject_id', subjectId)
+        .eq('year', year)
+        .eq('title', title)
+        .eq('status', 'approved')
+        .limit(1);
+
+      if (alreadyApproved && alreadyApproved.length > 0) {
+        return res.status(409).json({
+          error: `The ${title} paper for this subject (${year}) is already published on Rewind! Thank you for checking.`
+        });
+      }
+
       const { data: record, error: dbError } = await supabase
         .from('submissions')
         .insert({
@@ -226,6 +243,23 @@ async function handler(req, res) {
     if (existing && existing.length > 0) {
       return res.status(409).json({
         error: 'This exact question paper has already been submitted!'
+      });
+    }
+
+    // Check if this exam is already approved and published
+    const { data: alreadyApproved } = await supabase
+      .from('submissions')
+      .select('id')
+      .eq('group_id', groupId)
+      .eq('subject_id', subjectId)
+      .eq('year', year)
+      .eq('title', title)
+      .eq('status', 'approved')
+      .limit(1);
+
+    if (alreadyApproved && alreadyApproved.length > 0) {
+      return res.status(409).json({
+        error: `The ${title} paper for this subject (${year}) is already published on Rewind! Thank you for checking.`
       });
     }
 
