@@ -86,11 +86,29 @@ async function handler(req, res) {
     const groupId = fields.group_id;
     const subjectId = fields.subject_id;
     const subjectName = fields.subject_name;
-    const examType = fields.exam_type;
+    let examType = fields.exam_type;
     const semester = fields.semester;
     const year = fields.year;
-    const title = fields.title;
+    let title = fields.title;
+    const examChoice = fields.exam_choice;
     const contributorName = fields.contributor_name ? fields.contributor_name.trim() : 'Anonymous';
+
+    if (examChoice) {
+      if (!title) title = examChoice;
+      if (!examType) {
+        if (examChoice.startsWith('ISE')) examType = 'ISE';
+        else if (examChoice.startsWith('ESE')) examType = 'ESE';
+        else if (examChoice.startsWith('MSE')) examType = 'MSE';
+        else examType = 'PYQ';
+      }
+    }
+    if (!title && examType) title = examType;
+    if (!examType && title) {
+      if (title.startsWith('ISE')) examType = 'ISE';
+      else if (title.startsWith('ESE')) examType = 'ESE';
+      else if (title.startsWith('MSE')) examType = 'MSE';
+      else examType = 'PYQ';
+    }
 
     if (!groupId || !subjectId || !examType || !semester || !year || !title) {
       return res.status(400).json({ error: 'Please fill in all required fields.' });

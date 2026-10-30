@@ -658,12 +658,13 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Exam Type</label>
-            <select name="exam_type" required>
-              <option value="">Select</option>
-              <option value="ISE">ISE</option>
-              <option value="MSE">MSE</option>
-              <option value="ESE">ESE</option>
+            <label>Exam</label>
+            <select name="exam_choice" id="upExamChoice" required>
+              <option value="">Select exam</option>
+              <option value="ISE I" data-exam="ISE">ISE 1 (In-Sem Exam I)</option>
+              <option value="ISE II" data-exam="ISE">ISE 2 (In-Sem Exam II)</option>
+              <option value="ESE" data-exam="ESE">ESE (End-Sem Exam)</option>
+              <option value="MSE" data-exam="MSE">MSE (Mid-Sem Exam)</option>
             </select>
           </div>
           <div class="form-group">
@@ -677,7 +678,7 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Year</label>
+            <label>Academic Year</label>
             <select name="year" required>
               <option value="">Select year</option>
               <option value="2024-25">2024-25</option>
@@ -686,13 +687,9 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 20px 72px; }
             </select>
           </div>
           <div class="form-group">
-            <label>Paper Title</label>
-            <input type="text" name="title" placeholder="e.g. ISE I" required />
+            <label>Your Name <span style="font-weight:400;text-transform:none">(optional)</span></label>
+            <input type="text" name="contributor_name" placeholder="e.g. Rahul S." />
           </div>
-        </div>
-        <div class="form-group">
-          <label>Your Name <span style="font-weight:400;text-transform:none">(optional — leave blank for anonymous)</span></label>
-          <input type="text" name="contributor_name" placeholder="e.g. Rahul S." />
         </div>
         <div class="form-group">
           <label>Question Paper (PDF)</label>
@@ -923,7 +920,7 @@ function renderSubjects(g) {
 
 function paperCard(p, gId, sId) {
   var action = p.soon
-    ? '<button class="soon" type="button" onclick="openUploadModal(\'' + esc(gId || '') + '\', \'' + esc(sId || '') + '\', \'' + esc(p.exam || '') + '\', \'' + esc(p.year || '') + '\')">Upload this &rarr;</button>'
+    ? '<button class="soon" type="button" onclick="openUploadModal(\'' + esc(gId || '') + '\', \'' + esc(sId || '') + '\', \'' + esc(p.exam || '') + '\', \'' + esc(p.year || '') + '\', \'' + esc(p.title || '') + '\')">Upload this &rarr;</button>'
     : '<a class="dl" href="' + esc(p.file) + '" download target="_blank" rel="noopener">Download <span class="dl-ic" aria-hidden="true">&darr;</span></a>';
   var credit = (p.contributor && p.contributor !== 'Anonymous')
     ? '<p class="paper-contributor">Contributed by ' + esc(p.contributor) + '</p>'
@@ -1126,7 +1123,7 @@ function populateSubjects(groupId, selectedSubjectId) {
   });
 }
 
-function openUploadModal(groupId, subjectId, examType, year) {
+function openUploadModal(groupId, subjectId, examType, year, examTitle) {
   var modal = document.getElementById('uploadModal');
   var form = document.getElementById('uploadForm');
   var successScreen = document.getElementById('uploadSuccess');
@@ -1147,9 +1144,23 @@ function openUploadModal(groupId, subjectId, examType, year) {
     document.getElementById('upGroup').value = groupId;
     populateSubjects(groupId, subjectId);
   }
-  if (examType && form.elements['exam_type']) {
-    form.elements['exam_type'].value = examType;
+
+  var examChoiceEl = document.getElementById('upExamChoice');
+  if (examChoiceEl) {
+    var target = (examTitle || examType || '').toUpperCase().trim();
+    if (target === 'ISE I' || target === 'ISE 1' || target === 'ISE-1') {
+      examChoiceEl.value = 'ISE I';
+    } else if (target === 'ISE II' || target === 'ISE 2' || target === 'ISE-2') {
+      examChoiceEl.value = 'ISE II';
+    } else if (target === 'ESE') {
+      examChoiceEl.value = 'ESE';
+    } else if (target === 'MSE') {
+      examChoiceEl.value = 'MSE';
+    } else if (target === 'ISE') {
+      examChoiceEl.value = 'ISE I';
+    }
   }
+
   if (year && form.elements['year']) {
     form.elements['year'].value = year;
   }
@@ -1246,6 +1257,16 @@ function closeUploadModal() {
       var subjectName = subSelect && subSelect.selectedIndex > -1 ? subSelect.options[subSelect.selectedIndex].text : '';
       formData.append('subject_name', subjectName);
 
+      // Auto-set title and exam_type from exam selection
+      var examChoiceEl = document.getElementById('upExamChoice');
+      if (examChoiceEl) {
+        var selectedOpt = examChoiceEl.options[examChoiceEl.selectedIndex];
+        var examVal = examChoiceEl.value;
+        var examTypeVal = selectedOpt ? selectedOpt.getAttribute('data-exam') : (examVal.indexOf('ISE') > -1 ? 'ISE' : examVal);
+        formData.set('title', examVal);
+        formData.set('exam_type', examTypeVal);
+      }
+
       submitBtn.disabled = true;
       submitBtn.textContent = 'Uploading paper...';
       statusDiv.className = 'upload-status info';
@@ -1299,6 +1320,11 @@ function fetchApprovedPapers() {
     .then(function (data) {
       if (!data.papers || !data.papers.length) return;
       var changed = false;
+      function normTitle(t) {
+        return String(t || '').trim().toUpperCase()
+          .replace(/\b1\b/, 'I')
+          .replace(/\b2\b/, 'II');
+      }
       data.papers.forEach(function (p) {
         var g = groupById(String(p.group_id));
         if (!g) { console.warn('[Rewind] Unknown group_id:', p.group_id); return; }
@@ -1313,7 +1339,7 @@ function fetchApprovedPapers() {
           // Replace a matching "coming soon" placeholder if one exists
           var placeholderIdx = -1;
           for (var i = 0; i < s.papers.length; i++) {
-            if (s.papers[i].soon && s.papers[i].title === p.title && s.papers[i].year === p.year && (s.papers[i].exam || '').toUpperCase() === (p.exam_type || '').toUpperCase()) {
+            if (s.papers[i].soon && normTitle(s.papers[i].title) === normTitle(p.title) && s.papers[i].year === p.year) {
               placeholderIdx = i;
               break;
             }
